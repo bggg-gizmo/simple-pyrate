@@ -1,98 +1,53 @@
 # Simple Pyrate v2.5
 
-**A moonlit Windows chart room for video, audio and transcripts.**
+![Simple Pyrate v2.5. A pirate ship in a moonlit lagoon, illustrated with the app’s original artwork.](docs/media/pyrate-banner.jpg)
 
-Developed by **The Background Gremlin Group**  
-Developing unique tools for unique individuals · **BGGG / Est. 2020**
+[![Platform: Windows 10 and 11](docs/media/windows.svg)](#quick-start)
+[![Edition: v2.5](docs/media/edition.svg)](CHANGELOG.md)
+[![Formats: MP4, MP3, TXT, SRT](docs/media/formats.svg)](#choose-your-cargo)
+[![Desktop: PowerShell and WPF](docs/media/runtime.svg)](docs/DEVELOPMENT.md)
 
-## Launch on Windows
+**A dark Windows desktop downloader for video, audio, and transcripts.** Paste a link, choose what to save, and watch your ship leave the lagoon. Each item in a channel or playlist haul gets its own port encounter.
 
-1. Extract the entire ZIP to a folder you control. Keep the scripts and the assets folder together.
-2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
-3. On first launch, choose **Install missing tools** if Shipyard reports any missing. Approve Windows’ administrator prompt. The separate setup window closes when it succeeds.
-4. Paste one complete link per line. Choose **Single item per link** or **Playlist / full channel**, pick the formats, and click **Queue haul** or press **Ctrl+Enter**.
+[Download the Windows ZIP](https://github.com/bggg-gizmo/simple-pyrate/raw/refs/heads/main/Simple-Pyrate-v2.5-Windows.zip) · [User guide](docs/USER-GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Development and verification](docs/DEVELOPMENT.md)
 
-The app is shipped as full source with a CMD launcher, not as a compiled EXE. It targets 64-bit Windows 10 and 11 (x64 and ARM64). The launcher uses a process-only PowerShell execution-policy override. It does not change Windows’ machine or user execution policy or bypass a system administrator’s Group Policy.
+## Quick start
 
-## Choose what to save
+1. Download the ZIP above and **extract it fully**. Alternatively, use **Code → Download ZIP** to get the repo source and extract that.
+2. On Windows, double-click **`Start-Simple-Pyrate.cmd`** from the extracted app folder. Keep it beside the other scripts and the `assets` folder.
+3. If **Shipyard** finds missing tools, choose **Install missing tools** and approve the Windows prompt. It installs yt-dlp, FFmpeg, FFprobe, and Deno as needed on the **machine-wide PATH**. Normal downloads do not require elevation.
+4. Paste one link per line, choose **Single item per link** or **Playlist / full channel**, select formats, and click **Queue haul**. **Ctrl+Enter** works too.
 
-| Choice | What you get | Folder |
+**Requirements:** 64-bit Windows 10 or 11, Windows PowerShell 5.1, and .NET Framework 4.8. The app is a source bundle with a CMD launcher, not a compiled EXE. Python, Node.js, and the .NET SDK are not needed to use it. Internet access is needed for tool setup and downloads.
+
+## Choose your cargo
+
+| Choice | What it saves | Subfolder |
 | --- | --- | --- |
-| MP4 | Video with audio when present. Video quality can be capped from 480p to 2160p. | `Video` |
-| MP3 | Audio only. Choose 128, 192, 320 kbps, or the best variable bitrate. | `Audio` |
-| Transcript → TXT | Plain text from a caption track, with timings and styling removed. No media or SRT is retained in this mode. | `Transcripts` |
-| Transcript → SRT | Timed subtitle files. No media is downloaded if Transcript is the only mode selected. | `Transcripts` |
-| Transcript → Both | TXT and SRT from the same matching tracks. | `Transcripts` |
+| **MP4** | Video with audio when present. Choose best available or cap the video quality. | `Video` |
+| **MP3** | Audio only. Choose 128, 192, or 320 kbps, or best variable bitrate. | `Audio` |
+| **Transcript** | Plain TXT, timed SRT, or both from available captions. No video or audio is downloaded if Transcript is the only choice. | `Transcripts` |
 
-Check any combination. Each URL is one queue entry, with a separate pass for each selected output. Paste a YouTube channel’s main URL in **Playlist / full channel** mode for the uploads yt-dlp can enumerate, including Shorts and streamed uploads where available. A `/videos`, `/shorts` or `/streams` URL restricts a YouTube haul to that tab. A playlist link without collection mode processes only its first entry. Some extractors accept posts or individual videos but cannot enumerate a whole profile. For an unsupported profile, paste the direct links you want in the batch.
+Select any combination. The default save folder is `%USERPROFILE%\Downloads\Simple Pyrate` on a fresh setup. Change it with **Browse**.
 
-The fresh-install default location is `%USERPROFILE%\Downloads\Simple Pyrate`. **Browse** lets you enter a new path, navigate folders, or choose another drive. **Saved files** lists available files from this session, including valid finished files found in the destination on retries. Double-click a file to open it. Your selections and destination are remembered. The queue, saved-file list, and ship’s log are session-only.
-
-Use **Stop active** to stop the current haul, **Remove selected** for a queued entry, and **Retry selected** for a failed, stopped, or partial entry. Finished files are retained and existing outputs are not overwritten. An interrupted media download can leave a part file for yt-dlp to resume when the source supports it. **Clear finished** clears rows, not files. **Motion** controls the cinematic scenes, animated backdrop, and progress sweep. **Sea sound** plays the bundled local ambience and is off by default.
+Simple Pyrate uses [yt-dlp’s extractors](https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md) for YouTube, Rumble, TikTok, Instagram, X, and other supported sources. Coverage is per link. A site may support individual posts without exposing an entire profile, and a video may not have a caption track in the language you select.
 
 ## The voyage
 
-- **At anchor.** The ship rocks under the moon in the lagoon until a haul starts.
-- **Setting sail.** Ghostly titles drift through fog while the ship leaves the cove. The next cut is open water. If yt-dlp reports a wait, the open-water shot shows the remaining time. Simple Pyrate does not impose a blanket three-second delay.
-- **Plundering in progress.** Each resolved video, audio, or transcript item is its own numbered port encounter. Four fictional port silhouettes rotate as the coastline changes. While an encounter is active, the ship fires animated salvos, with muzzle light, flying sparks, and drifting smoke. An item that has no matching subtitles still gets an encounter, and the queue reports that no file was saved.
-- **On to the next port.** Successive items or queued links stay on one voyage. Each battle is separated by an open-water shot. Very fast items can finish before their scenes play, so the cutscenes can briefly catch up after the download queue is done. They never hold up downloading, file saving, or the queue.
-- **Making for harbor.** After the last encounter, the ship sails back into the lagoon. Cancelling the last job skips the pending visual encounters and turns the ship for harbor immediately. Turning off Motion removes the animated transitions and decorative effects.
+| At anchor | Plundering in progress |
+| :---: | :---: |
+| [![Reconstructed idle interface with the moonlit lagoon, cargo options, and an empty queue](docs/media/at-anchor.jpg)](docs/media/at-anchor.jpg) | [![Reconstructed active interface with a port battle, MP3 transfer, and progress bar](docs/media/port-battle.jpg)](docs/media/port-battle.jpg) |
 
-## Captions and sites
+*These are UI previews recreated from the shipped XAML, original artwork, and scene renderer, with sample download data. They are not native Windows screenshots.*
 
-Simple Pyrate uses yt-dlp’s extractors for YouTube, Rumble, TikTok, Instagram, X and other supported sites. Support depends on the exact URL and what the site serves. This release does not import browser sessions, ask for credentials, or attempt to bypass access restrictions or DRM. Private or sign-in-only posts may fail, and some public profiles require authentication or do not expose an upload list.
+The ship leaves the moonlit lagoon, shows source-reported waits at sea, fires a salvo at each port, and returns after the last encounter. The visuals never delay downloads. **Motion** pauses decorative animation and **Sea sound** turns on the bundled ambience.
 
-The language field accepts codes such as `en`, `de`, `pt-BR`, or comma-separated combinations. A base language can match regional tracks. Use `all` alone for every exposed caption language except live chat. Manually supplied subtitles take precedence over automatic captions for the same language. Automatic captions are optional and only work where the source exposes them. Simple Pyrate does not generate new captions from speech. When a source publishes no matching convertible track, the app reports that in the queue and log.
+## Project docs
 
-## What Shipyard changes
+- [User guide](docs/USER-GUIDE.md) covers full-channel hauls, captions, the queue, Shipyard, and removal.
+- [Troubleshooting](docs/TROUBLESHOOTING.md) covers startup, missing tools, blocked sources, and partial downloads.
+- [Development and verification](docs/DEVELOPMENT.md) covers the source layout, local tests, and Windows checks.
+- [Changelog](CHANGELOG.md) records what shipped in v2.5.
 
-- Checks for `yt-dlp.exe`, `ffmpeg.exe`, `ffprobe.exe` and `deno.exe` on the **Windows system PATH**, not the current user’s PATH or a virtual environment. FFmpeg and FFprobe must be in the same PATH directory.
-- Installs missing tools under `%ProgramFiles%\BGGG\Blackwake\bin`, verifies the downloaded release asset against its published SHA-256 and byte count, then adds the directory to the machine PATH in the Windows registry. App sessions read the updated machine PATH directly. An already-open terminal may need to be reopened.
-- Reuses existing tools on the machine PATH. **Refresh managed tools** updates managed packages and leaves unrelated copies untouched. Simple Pyrate runs its job worker without requesting elevation. Run the app normally and let Windows elevate only Shipyard.
-- Upstream builds come from [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases), [BtbN FFmpeg Builds](https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases) and [Deno](https://github.com/denoland/deno/releases). Existing Deno installations should be at least 2.3. Existing yt-dlp executables should be current.
-- If you want to remove just Simple Pyrate, delete its extracted folder. The existing settings path, `%LOCALAPPDATA%\BGGG\Blackwake`, is preserved so an update picks up your preferred save folder and other options. The managed Program Files directory is also reused. To remove its managed tools as well, remove only the existing Blackwake bin entry from **System Properties → Advanced → Environment Variables → System variables → Path** and delete `%ProgramFiles%\BGGG\Blackwake` as an administrator. This does not touch your downloads or tools installed by other apps.
-
-## Verification
-
-On Windows, check the native interface and progress control from Command Prompt:
-
-```cmd
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\SimplePyrate.ps1" -SmokeTest
-```
-
-Run the engine and voyage timeline checks:
-
-```cmd
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Engine.Tests.ps1"
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Voyage.Tests.ps1"
-```
-
-If Python and FFmpeg are available for development, start the bundled local fixture server with `python tests\local_fixture.py`. Then run this in a separate Command Prompt after installing or locating yt-dlp and FFmpeg on the PATH:
-
-```cmd
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\Engine.Tests.ps1' -YtDlp (Get-Command yt-dlp.exe).Source -Ffmpeg (Get-Command ffmpeg.exe).Source -FixtureUrl 'http://127.0.0.1:8769/index.html' -CollectionUrl 'http://127.0.0.1:8769/collection.html'"
-```
-
-The 65 checks cover output formats, single and multi-item downloads, item-to-port events, source waits, return timing, cancellation and reduced motion. The engine and timeline tests ran under PowerShell 7 on Linux using real yt-dlp and FFmpeg with the bundled local HTTP fixture. The C# renderer compiled against .NET Framework 4.8 WPF reference assemblies. The native Windows GUI, UAC/machine-PATH changes and live social-media extraction were not run here.
-
-## Project files
-
-| File | Purpose |
-| --- | --- |
-| `Start-Simple-Pyrate.cmd` | Windows launcher |
-| `Start-Blackwake.cmd` and `Blackwake.ps1` | Compatibility entry points for the earlier name |
-| `SimplePyrate.ps1` | Desktop interface, queue manager, output browser and log |
-| `VoyageTimeline.cs` | Predictable scene state machine, independent of the download worker |
-| `VoyageCanvas.cs` | Native WPF camera, water, fog, titles, and fictional cannon effects |
-| `Engine.ps1` | Tool discovery, argument handling, jobs, events and caption export |
-| `Install-Tools.ps1` | Elevated dependency setup and registry PATH registration |
-| `assets/Deck.xaml` | Dark WPF interface and fixed cinematic backdrop |
-| `assets/voyage/*.png` | Original layered ship, port, fog, and night-sky artwork |
-| `assets/build-voyage.py` | Rebuilds the voyage layers with Python 3 and Inkscape (not required to run the app) |
-| `assets/Night-Sea.wav` | Original synthesized sea ambience |
-| `assets/make-sea.py` | Source that regenerates the audio asset |
-| `tests/Engine.Tests.ps1` | Unit checks and optional real download integration tests |
-| `tests/Voyage.Tests.ps1` | Deterministic timeline and playback checks |
-| `tests/local_fixture.py` | Local media and caption fixtures for testing |
-
-[bggg] The Background Gremlin Group • Est. 2020
+**Developed by The Background Gremlin Group**  
+Developing unique tools for unique individuals · **BGGG / Est. 2020**
