@@ -1,2 +1,0 @@
-a08163de400cdc67c68832e10624af8f775134e28b51a257330ea117b943536e  Simple-Pyrate-v2.5.1-Windows.zip
-3d1fdb9e5fe0630de9e1dae4eabd9623e1d16ca18c190791d07c348b7fcd9e55  Simple-Pyrate-v2.5-Windows.zip
