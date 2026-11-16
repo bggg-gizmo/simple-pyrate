@@ -16,7 +16,7 @@ $script:PyrateMusicVolume=35
 $script:PyrateEffectsOn=$false
 $script:PyrateEffectsVolume=50
 $script:PyrateWizardComplete=$false
-$script:PyrateWizardLayoutRevision=2
+$script:PyrateWizardLayoutRevision=3
 $script:PyrateShortcut=$false
 $script:PyrateTrackIndex=0
 $script:PyrateMusicPlayer=$null
@@ -264,13 +264,13 @@ function Install-PyrateUserCopy {
             throw "Install folder must not be a junction or symbolic link: $base"
         }
     }
-    $target=Join-Path $base 'App-2.5.2-setup2'
+    $target=Join-Path $base "App-$script:PyrateVersion"
     if ([IO.Directory]::Exists($target) -and (([IO.File]::GetAttributes($target) -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
         throw "Install folder must not be a junction or symbolic link: $target"
     }
     if ($script:AppRoot.TrimEnd('\') -ieq $target) { return $target }
     $files=@(
-        'Start-Simple-Pyrate.cmd','Start-Blackwake.cmd','Blackwake.ps1','SimplePyrate.ps1',
+        'VERSION','Start-Simple-Pyrate.cmd','Start-Blackwake.cmd','Blackwake.ps1','SimplePyrate.ps1',
         'Engine.ps1','Install-Tools.ps1','Shipwright.ps1','VoyageTimeline.cs','VoyageCanvas.cs','RaidCanvas.cs',
         'assets\Deck.xaml','assets\Night-Sea.wav','assets\build-audio.py','assets\build-voyage.py','assets\make-sea.py',
         'assets\voyage\sea-and-sky.png','assets\voyage\fog.png','assets\voyage\lagoon.png','assets\voyage\pyrate-ship.png',
@@ -294,7 +294,7 @@ function Install-PyrateUserCopy {
             if (![IO.File]::Exists($existing) -or
                 (Get-FileHash -LiteralPath $existing -Algorithm SHA256).Hash -ne
                 (Get-FileHash -LiteralPath (Join-Path $script:AppRoot $name) -Algorithm SHA256).Hash) {
-                throw "An existing v2.5.2 copy at $target differs from this package. It was left untouched. Continue in portable mode or move the old folder first."
+                throw "An existing v$script:PyrateVersion copy at $target differs from this package. It was left untouched. Continue in portable mode or move the old folder first."
             }
         }
         return $target
@@ -316,7 +316,7 @@ function Install-PyrateUserCopy {
 function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu) {
     $location=[Environment]::GetFolderPath($(if ($StartMenu) { 'Programs' } else { 'DesktopDirectory' }))
     if (!$location -or ![IO.Directory]::Exists($location)) { throw 'Windows did not report a usable shortcut folder.' }
-    $link=Join-Path $location $(if ($StartMenu) { 'Simple Pyrate v2.5.2.lnk' } else { 'Simple Pyrate.lnk' })
+    $link=Join-Path $location $(if ($StartMenu) { "Simple Pyrate v$script:PyrateVersion.lnk" } else { 'Simple Pyrate.lnk' })
     $shell=New-Object -ComObject WScript.Shell
     $shortcut=$null
     try {
@@ -325,9 +325,12 @@ function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu)
         if ([IO.File]::Exists($link)) {
             if ($shortcut.TargetPath -ieq $target) { return }
             $installRoot=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BGGG\Simple Pyrate'
-            $previous=Join-Path $installRoot 'App-2.5.2\Start-Simple-Pyrate.cmd'
-            $updated=Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd'
-            if ($shortcut.TargetPath -ine $previous -or $target -ine $updated) {
+            $previous=@(
+                (Join-Path $installRoot 'App-2.5.2\Start-Simple-Pyrate.cmd'),
+                (Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd')
+            )
+            $updated=Join-Path (Join-Path $installRoot "App-$script:PyrateVersion") 'Start-Simple-Pyrate.cmd'
+            if ($shortcut.TargetPath -notin $previous -or $target -ine $updated) {
                 throw "The shortcut $link already points somewhere else and was left unchanged."
             }
         }

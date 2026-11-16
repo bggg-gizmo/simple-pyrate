@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.5.3
+
+Windows test candidate. Follow the [Windows verification checklist](docs/WINDOWS-TEST.md) before treating this build as verified.
+
+- Use a shared release version for the deck, launcher checks, setup installer, and diagnostics. Keep old per-user install folders and preferences intact.
+- Keep the corrected **Welcome to Simple Pyrate** and **Let’s set up your ship** first-run wizard, with themed artwork separate from its text. Retain the original controls, formats, music, raid milestones, and ship bells.
+- Stop waiting indefinitely on a quiet inherited output pipe after the downloader has already exited. Process any output available on either stream first and keep the downloader’s real exit code. Add a regression covering that handoff.
+- Preserve the previous source and original Windows ZIP under `old_builds/v2.5.2/`.
+
 ## v2.5.2
 
 ### Setup and ship-bell update
@@ -18,7 +27,7 @@
 - Added the Captain’s settings donation link for Monero, including a selectable XMR address and clipboard fallback.
 - Added the themed first-run Shipyard wizard with portable and per-user app options, download-folder selection, shortcut setup, dependency inspection, and retry after failed or declined installation. System-wide tool installation still requires UAC.
 - Kept the Windows PowerShell 5.1 System.Xaml fix and CMD diagnostic flags. Expanded the smoke test, local fixtures, and manual Windows checklist.
-- Published the [Windows ZIP](Simple-Pyrate-v2.5.2-Windows.zip) on `main` with its [expected SHA-256](SHA256SUMS.txt). Preserved v2.5.1 at [`old_builds/v2.5.1/`](old_builds/v2.5.1/) and the earlier [v2.5 archive](old_builds/README.md).
+- Published the [Windows ZIP](old_builds/v2.5.2/Simple-Pyrate-v2.5.2-Windows.zip) on `main` with its [expected SHA-256](SHA256SUMS.txt). Preserved v2.5.1 at [`old_builds/v2.5.1/`](old_builds/v2.5.1/) and the earlier [v2.5 archive](old_builds/README.md).
 - The packaged build passed 113 local checks. See the [audit](docs/V2.5.2-AUDIT.md) and [Windows checklist](docs/WINDOWS-TEST.md) for what was tested and what remains.
 
 ## v2.5.1

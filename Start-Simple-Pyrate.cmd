@@ -13,6 +13,11 @@ if not exist "%PyrateScript%" (
   if "%~1"=="" pause
   exit /b 1
 )
+if not exist "%~dp0VERSION" (
+  echo Missing VERSION. Extract the complete Simple Pyrate ZIP, then launch again. 1>&2
+  if "%~1"=="" pause
+  exit /b 1
+)
 if /i "%~1"=="-SmokeTest" goto smoke
 if /i "%~1"=="-Diagnose" goto diagnose
 if /i "%~1"=="-Setup" goto setup

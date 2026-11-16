@@ -6,6 +6,7 @@
 
 | Path | Purpose |
 | --- | --- |
+| [`VERSION`](../VERSION) | Shared application and installer version. |
 | [`Start-Simple-Pyrate.cmd`](../Start-Simple-Pyrate.cmd) | Starts Windows PowerShell 5.1 in STA mode. |
 | [`SimplePyrate.ps1`](../SimplePyrate.ps1) and [`assets/Deck.xaml`](../assets/Deck.xaml) | WPF window, queue, dialogs, settings, and download telemetry. |
 | [`Engine.ps1`](../Engine.ps1) | yt-dlp invocation, queue events, cancellation, and transcript export. |
@@ -62,16 +63,16 @@ The v2.5.1 renderer sources compiled with the launcher’s explicit references a
 1. Run the engine, voyage, and upgrade tests, then the native WPF smoke test on Windows.
 2. On a test PC or VM, launch as a regular user. Check first-run Shipyard, UAC, the machine PATH, and restart behavior. If both Windows architectures are being advertised as verified, test both x64 and ARM64.
 3. Try one permitted real-world media URL and one collection with captions. Record the source and yt-dlp version. The local fixture does not establish live platform compatibility.
-4. Stage the launcher, scripts, C# files, assets, and tests together. Preserve CRLF and the UTF-8 BOM on the Windows PowerShell scripts.
+4. Stage `VERSION`, the launcher, scripts, C# files, assets, and tests together. Preserve CRLF and the UTF-8 BOM on the Windows PowerShell scripts.
 5. Extract the finished ZIP into a clean folder and run its launcher and smoke test from that folder. Calculate its SHA-256 and update `SHA256SUMS.txt` with the exact archive name.
 
 ## Verify a Windows ZIP
 
 ```powershell
-Get-FileHash .\Simple-Pyrate-v2.5.2-Windows.zip -Algorithm SHA256
+Get-FileHash .\old_builds\v2.5.2\Simple-Pyrate-v2.5.2-Windows.zip -Algorithm SHA256
 ```
 
-Compare the result with the [expected checksum](../SHA256SUMS.txt) generated from the packaged build. The checksum is intentionally stored outside the ZIP. The v2.5.2 ZIP contains the current source, assets, documentation, tests, and unchanged archived sources. Repository documentation may be updated independently of the downloadable archive.
+Compare the result with the [expected checksum](../SHA256SUMS.txt) generated from the packaged build. The checksum is intentionally stored outside the ZIP. The original v2.5.2 ZIP contains that release’s source, assets, documentation, tests, and archived sources. It is not a checksum reference for v2.5.3. Repository documentation may be updated independently of the downloadable archive.
 
 
 ## v2.5.2 verification

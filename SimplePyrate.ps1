@@ -1,6 +1,7 @@
 ﻿param([switch]$SmokeTest,[switch]$SetupWizard)
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
+$script:PyrateVersion=$null
 $script:StartupStage = 'Loading Windows desktop assemblies'
 try {
 Add-Type -AssemblyName PresentationFramework,PresentationCore,WindowsBase,UIAutomationTypes,System.Xaml
@@ -37,6 +38,7 @@ namespace Blackwake {
 $script:StartupStage = 'Loading the download engine'
 . (Join-Path $PSScriptRoot 'Engine.ps1')
 $script:AppRoot = $PSScriptRoot
+$script:PyrateVersion = Get-BwAppVersion $script:AppRoot
 $script:ProfileDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BGGG\Blackwake'
 $script:PrefsPath = Join-Path $script:ProfileDir 'settings.json'
 $script:Lines = [Collections.Generic.Queue[string]]::new()
@@ -85,13 +87,15 @@ if (!('Pyrate.VoyageCanvas' -as [type])) {
 $script:StartupStage = 'Opening the deck layout'
 $xml = [Xml.XmlReader]::Create((Join-Path $PSScriptRoot 'assets\Deck.xaml'))
 try { $script:Deck = [Windows.Markup.XamlReader]::Load($xml) } finally { $xml.Dispose() }
+$script:Deck.Title="Simple Pyrate v$script:PyrateVersion • BGGG"
 $script:Deck.add_SourceInitialized({ Set-DarkChrome $script:Deck })
 $script:Ui = @{}
-foreach ($name in ('SeaSound Motion ShowTools ShowSettings DeckScroll Board BoardLeft BoardGap BoardRight MobileRow NewCargoCard FlightCard VoyageStage VoyageRow VoyageAnnounce DeckAtmosphere DeckDrift Paste Links LinkHint Single Collection VideoMode AudioMode CaptionMode MediaOptions VideoOptions AudioOptions CaptionOptions HeightChoice QualityChoice Languages CaptionChoice AutoCaptions Browse Destination FormError Queue ActiveStatus ActiveTitle ActiveDetail MeterTrack MeterFill MeterSweep SweepShift AccessibleMeter Percent Telemetry QueueCount Jobs EmptyQueue Cancel Remove Retry Clear OpenFolder ShowLog ShowFiles ToolStatus' -split ' ')) {
+foreach ($name in ('DeckVersion SeaSound Motion ShowTools ShowSettings DeckScroll Board BoardLeft BoardGap BoardRight MobileRow NewCargoCard FlightCard VoyageStage VoyageRow VoyageAnnounce DeckAtmosphere DeckDrift Paste Links LinkHint Single Collection VideoMode AudioMode CaptionMode MediaOptions VideoOptions AudioOptions CaptionOptions HeightChoice QualityChoice Languages CaptionChoice AutoCaptions Browse Destination FormError Queue ActiveStatus ActiveTitle ActiveDetail MeterTrack MeterFill MeterSweep SweepShift AccessibleMeter Percent Telemetry QueueCount Jobs EmptyQueue Cancel Remove Retry Clear OpenFolder ShowLog ShowFiles ToolStatus' -split ' ')) {
     $item = $script:Deck.FindName($name)
     if (!$item) { throw "Missing interface control $name." }
     $script:Ui[$name] = $item
 }
+$script:Ui.DeckVersion.Text="V$script:PyrateVersion   /     BGGG  ·  EST. 2020"
 $script:Ui.Jobs.ItemsSource = $script:Rows
 $script:Voyage = [Pyrate.VoyageTimeline]::new()
 $script:VoyageClock = [Diagnostics.Stopwatch]::StartNew()
@@ -808,7 +812,7 @@ $script:Deck.add_Loaded({
     if ($script:SmokeTest) { return }
     Set-BwResponsive; Set-BwMotion; Set-BwSound; Set-PyrateMusic $true; $null=$script:Ui.Links.Focus()
     $ready=Update-BwTools
-    Add-BwLog 'Simple Pyrate v2.5.2 is ready for links.'
+    Add-BwLog "Simple Pyrate v$script:PyrateVersion is ready for links."
     $script:Timer.Start()
     $script:VoyageTimer.Start()
     if (!$ready) { $script:Hold=$true }
@@ -930,14 +934,15 @@ if ($SmokeTest) {
         if (![IO.File]::Exists((Join-Path $script:AppRoot "assets\audio\$bell.wav"))) { throw "Missing ship bell: $bell" }
     }
     $script:Deck.Close()
-    Write-Output 'Simple Pyrate v2.5.2 WPF smoke test passed.'
+    Write-Output "Simple Pyrate v$script:PyrateVersion WPF smoke test passed."
     Write-Output "Verified first-run wizard layout revision $script:PyrateWizardLayoutRevision."
 } else { $null=$script:Deck.ShowDialog() }
 exit 0
 } catch {
     $failure = $_
+    $appName=if ($script:PyrateVersion) { "Simple Pyrate v$script:PyrateVersion" } else { 'Simple Pyrate' }
     $details = @(
-        'Simple Pyrate v2.5.2 could not open the chart room.'
+        "$appName could not open the chart room."
         "Stage: $script:StartupStage"
         "PowerShell: $($PSVersionTable.PSVersion)"
         $failure.ToString()
@@ -956,9 +961,9 @@ exit 0
     } catch { $logPath = $null }
     try { [Console]::Error.WriteLine($details) } catch { }
     if (!$SmokeTest) {
-        $message = "Simple Pyrate v2.5.2 could not open the chart room.`r`n`r`nStage: $script:StartupStage`r`n$($failure.Exception.Message)"
+        $message = "$appName could not open the chart room.`r`n`r`nStage: $script:StartupStage`r`n$($failure.Exception.Message)"
         if ($logPath) { $message += "`r`n`r`nStartup log: $logPath" }
-        try { $null = [Windows.MessageBox]::Show($message,'Simple Pyrate v2.5.2') } catch { }
+        try { $null = [Windows.MessageBox]::Show($message,$appName) } catch { }
     }
     exit 1
 }

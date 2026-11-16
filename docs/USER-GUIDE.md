@@ -4,9 +4,9 @@
 
 ## Install and launch
 
-In v2.5.2, the **Shipyard** wizard checks the save location and machine-wide dependencies and offers a portable start or a per-user app copy. The latter creates a Start Menu entry and can also create a Desktop shortcut. Open the wizard again from **Settings → First-run setup** or run `Start-Simple-Pyrate.cmd -Setup`.
+The **Shipyard** wizard checks the save location and machine-wide dependencies and offers a portable start or a per-user app copy. The latter creates a Start Menu entry and can also create a Desktop shortcut. Open the wizard again from **Settings → First-run setup** or run `Start-Simple-Pyrate.cmd -Setup`.
 
-Use Windows PowerShell 5.1 and .NET Framework 4.8 on 64-bit Windows 10 or 11. Download the [v2.5.2 Windows ZIP](../Simple-Pyrate-v2.5.2-Windows.zip), extract it into a fresh folder, and launch [`Start-Simple-Pyrate.cmd`](../Start-Simple-Pyrate.cmd) without running it as administrator. Keep all of the source and artwork beside it. The launcher uses a per-process PowerShell execution-policy override without changing user or machine policy. An administrator’s Group Policy can still block it.
+Use Windows PowerShell 5.1 and .NET Framework 4.8 on 64-bit Windows 10 or 11. Download the [current Windows source ZIP](https://github.com/bggg-gizmo/simple-pyrate/archive/refs/heads/main.zip), extract it into a fresh folder, and launch [`Start-Simple-Pyrate.cmd`](../Start-Simple-Pyrate.cmd) without running it as administrator. Keep all of the source and artwork beside it. The launcher uses a per-process PowerShell execution-policy override without changing user or machine policy. An administrator’s Group Policy can still block it.
 
 On a first launch with missing tools, choose **Install missing tools** or defer with **Later**. If you defer, open **Shipyard** when ready. Jobs waiting for tools can start after successful setup. Only the separate tool setup requests administrator rights.
 

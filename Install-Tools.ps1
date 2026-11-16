@@ -2,6 +2,8 @@
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'Engine.ps1')
+$script:PyrateVersion=Get-BwAppVersion $PSScriptRoot
+$script:PyrateReleaseAgent="BGGG-SimplePyrate/$script:PyrateVersion"
 
 function Set-BwMachinePath([string]$Path) {
     $key = [Microsoft.Win32.Registry]::LocalMachine.OpenSubKey('SYSTEM\CurrentControlSet\Control\Session Manager\Environment',$true)
@@ -37,7 +39,7 @@ function New-BwProtectedDirectory([string]$Path) {
 }
 function Get-BwReleaseAsset($Package) {
     $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$($Package.Repo)/releases/$($Package.Release)" -Headers @{
-        'User-Agent'='BGGG-SimplePyrate/2.5.2'; 'Accept'='application/vnd.github+json'
+        'User-Agent'=$script:PyrateReleaseAgent; 'Accept'='application/vnd.github+json'
     } -TimeoutSec 45
     $matchesFound = @($release.assets | Where-Object { $_.name -ceq $Package.Asset })
     if ($matchesFound.Count -ne 1) { throw "Expected exactly one release asset named $($Package.Asset)." }
@@ -76,7 +78,7 @@ function Install-BwPackage($Package,[string]$Stage,[string]$Bin) {
     $asset = Get-BwReleaseAsset $Package
     $source = Join-Path $Stage $Package.Asset
     Write-Host "Fetching $($Package.Name) $($asset.Version) ($([Math]::Round($asset.Size / 1MB,1)) MB)..." -ForegroundColor Cyan
-    Invoke-WebRequest -Uri $asset.Url -OutFile $source -UseBasicParsing -TimeoutSec 900 -UserAgent 'BGGG-SimplePyrate/2.5.2'
+    Invoke-WebRequest -Uri $asset.Url -OutFile $source -UseBasicParsing -TimeoutSec 900 -UserAgent $script:PyrateReleaseAgent
     if ((Get-Item -LiteralPath $source).Length -ne $asset.Size -or
         (Get-FileHash -LiteralPath $source -Algorithm SHA256).Hash -ine $asset.Digest) {
         throw "SHA-256 or byte count did not match for $($Package.Asset). The package was not installed."
@@ -113,7 +115,7 @@ $exitCode = 0
 try {
     $principal = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
     if (!$principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { throw 'Administrator approval is required to install on the Windows system PATH.' }
-    $Host.UI.RawUI.WindowTitle = 'Simple Pyrate v2.5.2 | Shipyard'
+    $Host.UI.RawUI.WindowTitle = "Simple Pyrate v$script:PyrateVersion | Shipyard"
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
@@ -136,7 +138,7 @@ try {
         @{ Name='FFmpeg + FFprobe'; Repo='FFmpeg-Builds/FFmpeg-Builds'; Release='tags/latest'; Asset=$ffAsset; Names=@('ffmpeg.exe','ffprobe.exe'); Key='ffmpeg' },
         @{ Name='Deno'; Repo='denoland/deno'; Release='latest'; Asset=$denoAsset; Names=@('deno.exe'); Key='deno' }
     )
-    Write-Host 'SIMPLE PYRATE V2.5.2 / SHIPYARD' -ForegroundColor DarkYellow
+    Write-Host "SIMPLE PYRATE V$script:PyrateVersion / SHIPYARD" -ForegroundColor DarkYellow
     Write-Host "Machine-wide tools: $bin"
     $stage = Join-Path $base ('setup-' + [guid]::NewGuid().ToString('N'))
     New-BwProtectedDirectory $stage

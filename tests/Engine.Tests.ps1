@@ -75,6 +75,39 @@ try {
         $exit=Invoke-BwProcess $hostExe @('-NoProfile','-NonInteractive','-Command','Start-Sleep -Seconds 25') { param($Line,$IsError) } $token $tmp
         Assert-Bw ($exit -eq -999 -and $timer.Elapsed.TotalSeconds -lt 9) 'Stop interrupts a running child process'
     } finally { $token.Dispose() }
+    $pipeToken=[Threading.CancellationTokenSource]::new()
+    $pipeLines=[Collections.Generic.List[string]]::new()
+    $pipeErrors=[Collections.Generic.List[string]]::new()
+    try {
+        $parentScript=@'
+$self=[Diagnostics.Process]::GetCurrentProcess()
+$childStart=[Diagnostics.ProcessStartInfo]::new()
+try { $childStart.FileName=$self.MainModule.FileName } finally { $self.Dispose() }
+$childStart.UseShellExecute=$false
+$childStart.CreateNoWindow=$true
+$childStart.Arguments='-NoProfile -NonInteractive -Command "Start-Sleep -Seconds 20"'
+$child=[Diagnostics.Process]::Start($childStart)
+try { [Console]::Out.WriteLine("inherited-pipe-child:$($child.Id)") } finally { $child.Dispose() }
+[Console]::Out.WriteLine('final-stdout')
+[Console]::Error.WriteLine('final-stderr')
+exit 7
+'@
+        $encoded=[Convert]::ToBase64String([Text.Encoding]::Unicode.GetBytes($parentScript))
+        $pipeTimer=[Diagnostics.Stopwatch]::StartNew()
+        $pipeExit=Invoke-BwProcess $hostExe @('-NoProfile','-NonInteractive','-EncodedCommand',$encoded) {
+            param($Line,$IsError)
+            if ($IsError) { $pipeErrors.Add($Line) } else { $pipeLines.Add($Line) }
+        } $pipeToken $tmp 12
+        Assert-Bw ($pipeExit -eq 7 -and $pipeTimer.Elapsed.TotalSeconds -lt 11) 'An inherited output pipe does not delay the exited parent until timeout'
+        Assert-Bw ($pipeLines.Contains('final-stdout') -and ($pipeErrors | Where-Object { $_ -match 'final-stderr' })) 'Final output is collected from both streams before returning'
+        $childLine=$pipeLines | Where-Object { $_ -match '^inherited-pipe-child:\d+$' } | Select-Object -First 1
+        Assert-Bw ($childLine -and (Get-Process -Id ([int]($childLine.Split(':')[1])) -ErrorAction SilentlyContinue)) 'The descendant was still running when the parent result became available'
+    } finally {
+        foreach ($line in $pipeLines) {
+            if ($line -match '^inherited-pipe-child:(\d+)$') { Stop-Process -Id ([int]$Matches[1]) -ErrorAction SilentlyContinue }
+        }
+        $pipeToken.Dispose()
+    }
     $setupFile=Join-Path (Split-Path -Parent $PSScriptRoot) 'Install-Tools.ps1'
     $ast=[System.Management.Automation.Language.Parser]::ParseFile($setupFile,[ref]$null,[ref]$null)
     $entry=$ast.Find({

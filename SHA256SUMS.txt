@@ -1,1 +1,1 @@
-ecfa2b4bb6a30fa7a4b67736dc878bc3d0a7358ff3d6b804ddefe54e6e48f77e  Simple-Pyrate-v2.5.2-Windows.zip
+ecfa2b4bb6a30fa7a4b67736dc878bc3d0a7358ff3d6b804ddefe54e6e48f77e  old_builds/v2.5.2/Simple-Pyrate-v2.5.2-Windows.zip

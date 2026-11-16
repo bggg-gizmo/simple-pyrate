@@ -148,4 +148,8 @@ foreach ($test in @(
     @{ File='Start-Simple-Pyrate.cmd'; Find='-SetupWizard' })) {
     Check ([IO.File]::ReadAllText((Join-Path $root $test.File)).Contains($test.Find)) "$($test.File) retains the startup or setup integration"
 }
-"$script:Checks v2.5.2 checks passed."
+$release=Get-BwAppVersion $root
+Check ($release -ceq '2.5.3') 'This checkout identifies as Simple Pyrate 2.5.3'
+Check (([IO.File]::ReadAllText((Join-Path $root 'Start-Simple-Pyrate.cmd'))).Contains('%~dp0VERSION')) 'Launcher checks release metadata beside the entry script'
+Check (([IO.File]::ReadAllText((Join-Path $root 'Shipwright.ps1'))).Contains("'VERSION','Start-Simple-Pyrate.cmd'")) 'Per-user installer keeps the version metadata with the installed launcher'
+"$script:Checks v$release checks passed."

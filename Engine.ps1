@@ -73,6 +73,15 @@ function Get-BwToolPaths {
     }
     return $tools
 }
+function Get-BwAppVersion([string]$Root) {
+    $file=Join-Path $Root 'VERSION'
+    if (![IO.File]::Exists($file)) { throw "Simple Pyrate is missing the VERSION file. Extract the complete package. Expected: $file" }
+    $value=[IO.File]::ReadAllText($file).Trim()
+    if ($value -cnotmatch '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+        throw "Invalid Simple Pyrate version in $file."
+    }
+    return $value
+}
 function New-BwArguments($Job, [string]$Mode, $Tools) {
     $format = '%(title).100B [%(extractor_key).22B-%(id).42B].%(ext)s'
     $argsList = @('--ignore-config','--no-plugin-dirs','--encoding','utf-8','--no-colors','--newline','--progress','--progress-delta','0.25',
@@ -190,16 +199,21 @@ function Invoke-BwProcess([string]$Exe,[string[]]$Arguments,[scriptblock]$Handle
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $start
     $started = $false
+    $streams = @()
     try {
         $started = $process.Start()
         if (!$started) { throw "Could not start $Exe." }
         $process.StandardInput.Close()
         $deadline=[Diagnostics.Stopwatch]::StartNew()
+        $exitObserved=$null
+        $lastDrain=0.0
         $streams = @($process.StandardOutput,$process.StandardError)
         $reads = @($streams[0].ReadLineAsync(),$streams[1].ReadLineAsync())
         while ($null -ne $reads[0] -or $null -ne $reads[1] -or !$process.HasExited) {
             if ($Cancel.IsCancellationRequested) { Stop-BwChild $process; return -999 }
-            if ($TimeoutSeconds -gt 0 -and $deadline.Elapsed.TotalSeconds -ge $TimeoutSeconds) {
+            $now=$deadline.Elapsed.TotalSeconds
+            if ($process.HasExited -and $null -eq $exitObserved) { $exitObserved=$now; $lastDrain=$now }
+            if ($null -eq $exitObserved -and $TimeoutSeconds -gt 0 -and $now -ge $TimeoutSeconds) {
                 Stop-BwChild $process; return -998
             }
             $ready = $false
@@ -213,11 +227,23 @@ function Invoke-BwProcess([string]$Exe,[string[]]$Arguments,[scriptblock]$Handle
                     if ($line) { & $HandleLine $line ($i -eq 1) }
                 }
             }
+
+            # A descendant can inherit a pipe even after the downloader exits.
+            # Process buffered lines first, then bound the idle wait for EOF.
+            if ($null -ne $exitObserved) {
+                $now=$deadline.Elapsed.TotalSeconds
+                if ($ready) { $lastDrain=$now }
+                if (!$ready -and $now-$lastDrain -ge 2.0) {
+                    Write-Verbose 'The process exited, but an inherited output pipe did not close.'
+                    break
+                }
+            }
             if (!$ready) { [Threading.Thread]::Sleep(35) }
         }
         return $process.ExitCode
     } finally {
         if ($started -and !$process.HasExited) { Stop-BwChild $process }
+        foreach ($stream in $streams) { $stream.Dispose() }
         $process.Dispose()
     }
 }
