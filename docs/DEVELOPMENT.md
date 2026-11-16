@@ -10,10 +10,11 @@
 | [`SimplePyrate.ps1`](../SimplePyrate.ps1) and [`assets/Deck.xaml`](../assets/Deck.xaml) | WPF window, queue, dialogs, settings, and download telemetry. |
 | [`Engine.ps1`](../Engine.ps1) | yt-dlp invocation, queue events, cancellation, and transcript export. |
 | [`Install-Tools.ps1`](../Install-Tools.ps1) | Elevated dependency installation and machine PATH registration. |
-| [`VoyageTimeline.cs`](../VoyageTimeline.cs) and [`VoyageCanvas.cs`](../VoyageCanvas.cs) | State transitions and event-driven scene rendering. |
+| [`VoyageTimeline.cs`](../VoyageTimeline.cs), [`VoyageCanvas.cs`](../VoyageCanvas.cs), and [`RaidCanvas.cs`](../RaidCanvas.cs) | State transitions, event-driven scene rendering, and raid milestones. |
+| [`Shipwright.ps1`](../Shipwright.ps1), [`assets/audio/`](../assets/audio/), and [`assets/build-audio.py`](../assets/build-audio.py) | Settings, setup wizard, offline soundtrack, and sound-effect assets and generator. |
 | [`assets/voyage`](../assets/voyage/) and [`assets/Night-Sea.wav`](../assets/Night-Sea.wav) | Bundled original scene layers and ambience. |
 | [`assets/build-voyage.py`](../assets/build-voyage.py) and [`assets/make-sea.py`](../assets/make-sea.py) | Rebuild the scene layers with Python 3 and Inkscape, and the audio with Python 3. Neither script is needed at runtime. |
-| [`tests`](../tests/) | Engine checks, timeline checks, and local media fixture. |
+| [`tests/`](../tests/) | Engine, voyage, and upgrade checks and local media fixture. The archived suites are under [`old_builds/`](../old_builds/). |
 
 The original `Blackwake.ps1` and `Start-Blackwake.cmd` filenames are compatibility entry points. Preserve the existing settings and managed tools paths when changing branding or packaging.
 
@@ -24,10 +25,11 @@ From Windows Command Prompt at the repository root:
 ```cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Engine.Tests.ps1"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Voyage.Tests.ps1"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Upgrade.Tests.ps1"
 Start-Simple-Pyrate.cmd -SmokeTest
 ```
 
-The WPF smoke test opens the native window and checks that the rendered scene has real pixel content, then checks progress, caption controls, and the narrow layout. It exits with code 0 on pass or 1 on a startup or test failure. It does not install dependencies or download media. Run it on Windows separately from the cross-platform tests.
+The WPF smoke test opens the native window and checks that the rendered scene has real pixel content, then checks progress, caption controls, and the narrow layout. In v2.5.2 it also constructs Settings and the Shipyard wizard and checks the raid threshold and audio files. It exits with code 0 on pass or 1 on a startup or test failure. It does not install dependencies or download media. Run it on Windows separately from the cross-platform tests.
 
 For a real download test without using a social platform, install Python 3, yt-dlp, and FFmpeg, then start the local test server in one terminal:
 
@@ -57,7 +59,7 @@ The v2.5.1 renderer sources compiled with the launcher’s explicit references a
 
 ## Before distributing another build
 
-1. Run the engine and voyage tests, then the native WPF smoke test on Windows.
+1. Run the engine, voyage, and upgrade tests, then the native WPF smoke test on Windows.
 2. On a test PC or VM, launch as a regular user. Check first-run Shipyard, UAC, the machine PATH, and restart behavior. If both Windows architectures are being advertised as verified, test both x64 and ARM64.
 3. Try one permitted real-world media URL and one collection with captions. Record the source and yt-dlp version. The local fixture does not establish live platform compatibility.
 4. Stage the launcher, scripts, C# files, assets, and tests together. Preserve CRLF and the UTF-8 BOM on the Windows PowerShell scripts.
@@ -69,7 +71,7 @@ The v2.5.1 renderer sources compiled with the launcher’s explicit references a
 Get-FileHash .\Simple-Pyrate-v2.5.2-Windows.zip -Algorithm SHA256
 ```
 
-Compare the result with the repository’s `SHA256SUMS.txt`. The archive checksum is stored outside the ZIP. The v2.5.2 ZIP contains the current source, assets, documentation, tests, and unchanged archived sources. Repository documentation may be updated independently of the downloadable archive.
+Compare the result with the [expected checksum](../SHA256SUMS.txt) generated from the packaged build. The checksum is intentionally stored outside the ZIP. The v2.5.2 ZIP contains the current source, assets, documentation, tests, and unchanged archived sources. Repository documentation may be updated independently of the downloadable archive.
 
 
 ## v2.5.2 verification

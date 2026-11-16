@@ -7,7 +7,9 @@
 - MP4 finalization now keeps ready MP4s intact, prefers stream-copy remuxing for compatible inputs, and shows actual FFmpeg progress when conversion is needed. Original media stays on disk on failure or cancellation.
 - Added the Captain’s settings donation link for Monero, including a selectable XMR address and clipboard fallback.
 - Added the themed first-run Shipyard wizard with portable and per-user app options, download-folder selection, shortcut setup, dependency inspection, and retry after failed or declined installation. System-wide tool installation still requires UAC.
-- Kept the Windows PowerShell 5.1 System.Xaml fix, the CMD diagnostic flags, and the archived `old_builds/` files. Expanded the smoke test, local fixtures, and manual Windows checklist.
+- Kept the Windows PowerShell 5.1 System.Xaml fix and CMD diagnostic flags. Expanded the smoke test, local fixtures, and manual Windows checklist.
+- Published the [Windows ZIP](Simple-Pyrate-v2.5.2-Windows.zip) on `main` with its [expected SHA-256](SHA256SUMS.txt). Preserved v2.5.1 at [`old_builds/v2.5.1/`](old_builds/v2.5.1/) and the earlier [v2.5 archive](old_builds/README.md).
+- The packaged build passed 113 local checks. See the [audit](docs/V2.5.2-AUDIT.md) and [Windows checklist](docs/WINDOWS-TEST.md) for what was tested and what remains.
 
 ## v2.5.1
 

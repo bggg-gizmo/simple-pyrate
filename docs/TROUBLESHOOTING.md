@@ -14,7 +14,7 @@
 | A file is missing or an entry says **Partial** | Open **Ship’s log** to see which item or format failed. Check available disk space and that the destination is writable. Confirm the video plays at the source and the type is supported. Then try **Retry selected**. |
 | **No captions** appears | Confirm the source has captions for the selected language, or try `all`. If applicable, enable automatic captions and try again. No captions are created from speech. |
 | The source says unavailable, requires sign-in, or is rate limited | Open the source link to verify it’s available. This app does not import credentials. Leave source-imposed waits alone and retry later if needed. |
-| The boat is still at sea after the last file is saved | The animation may be catching up with a fast transfer. Disk writes and queue processing are already done. Turn off **Motion** to skip visual transitions. |
+| The boat is still at sea after the last file is saved | Check the queue row. If it shows a final result and no jobs remain, the animation may be catching up. Turn off **Motion** to skip visual transitions. If the row is still active, check **The deck** and **Ship’s log** instead. |
 
 ## See startup errors
 
@@ -34,5 +34,7 @@ Include your Windows version and architecture, the launch or failing action, the
 ## Processing takes a long time
 
 Check **The deck** before restarting. **Joining video and audio streams** is distinct from **MP4 audio encode** and **MP4 video encode**. Elapsed time updates even when FFmpeg cannot estimate the remaining time. When a conversion reports progress, speed and ETA come from FFmpeg. A compatible source is remuxed without recompressing. If a particular link still stalls, copy the ship’s log during the attempt and note the source link, operation, selected resolution, and whether Stop active works. A failed conversion leaves the original media in the Video folder.
+
+If VLC plays the file but the queue remains active, note the exact status, file extension, and whether the file appears in **Saved files**. A playable file alone does not confirm that the job sent its completion event. Retest the same URL with v2.5.2 in a fresh save folder and capture the last lines of **Ship’s log** if it still happens.
 
 If the wizard's tool setup fails, reopen it and retry after checking the network and UAC prompt. An elevated standard-user setup can write its log to the administrator account's profile. When troubleshooting that configuration, use the visible **Shipyard** install button to read the error in the console.

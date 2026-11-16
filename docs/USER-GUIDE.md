@@ -6,7 +6,7 @@
 
 In v2.5.2, the **Shipyard** wizard checks the save location and machine-wide dependencies and offers a portable start or a per-user app copy. The latter creates a Start Menu entry and can also create a Desktop shortcut. Open the wizard again from **Settings → First-run setup** or run `Start-Simple-Pyrate.cmd -Setup`.
 
-Use Windows PowerShell 5.1 and .NET Framework 4.8 on 64-bit Windows 10 or 11. Extract the Windows ZIP to a folder you control and launch [`Start-Simple-Pyrate.cmd`](../Start-Simple-Pyrate.cmd) without running it as administrator. Keep all of the source and artwork beside it. The launcher uses a per-process PowerShell execution-policy override without changing user or machine policy. An administrator’s Group Policy can still block it.
+Use Windows PowerShell 5.1 and .NET Framework 4.8 on 64-bit Windows 10 or 11. Download the [v2.5.2 Windows ZIP](../Simple-Pyrate-v2.5.2-Windows.zip), extract it into a fresh folder, and launch [`Start-Simple-Pyrate.cmd`](../Start-Simple-Pyrate.cmd) without running it as administrator. Keep all of the source and artwork beside it. The launcher uses a per-process PowerShell execution-policy override without changing user or machine policy. An administrator’s Group Policy can still block it.
 
 On a first launch with missing tools, choose **Install missing tools** or defer with **Later**. If you defer, open **Shipyard** when ready. Jobs waiting for tools can start after successful setup. Only the separate tool setup requests administrator rights.
 
@@ -16,7 +16,7 @@ On a first launch with missing tools, choose **Install missing tools** or defer 
 2. Choose **Single item per link** to process one item per link. A playlist-only link in this mode processes its first entry.
 3. Choose **Playlist / full channel** to let yt-dlp enumerate the supported collection. Use the main YouTube channel URL for the full available channel haul. URLs ending in `/videos`, `/shorts`, or `/streams` select that tab. If a source cannot enumerate a profile, use a batch of direct item links.
 4. Select **MP4**, **MP3**, or **Transcript**, in any combination. Each URL is one queue row, and each selected output is a separate pass.
-5. Click **Queue haul**. Check **The deck** for speed, ETA when available, item numbers, and final status.
+5. Click **Queue haul**. Check **The deck** for speed, ETA when available, item numbers, and final status. A job is finished when the queue row reports its result. The voyage can continue briefly after the files are saved.
 
 MP4 saves video and includes audio when the source has it. Choose **Best available** or a 480p, 720p, 1080p, 1440p, or 2160p cap. MP3 saves audio only, with 128, 192, or 320 kbps, or best variable bitrate as encoding options.
 

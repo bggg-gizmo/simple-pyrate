@@ -11,9 +11,15 @@
 Developed by **The Background Gremlin Group**  
 Developing unique tools for unique individuals · **BGGG / Est. 2020**
 
+## Download v2.5.2 for Windows
+
+[Simple-Pyrate-v2.5.2-Windows.zip](Simple-Pyrate-v2.5.2-Windows.zip) · [SHA-256 checksum](SHA256SUMS.txt)
+
+Use the named Windows ZIP. GitHub’s **Code → Download ZIP** is a source snapshot, not the packaged build. For an upgrade, extract v2.5.2 to a fresh folder instead of copying it over an earlier build.
+
 ## Launch on Windows
 
-1. Extract the entire ZIP to a folder you control. Keep the scripts and the assets folder together.
+1. Extract the entire Windows ZIP to a folder you control. Open `SimplePyrate` and keep its scripts and assets together.
 2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
 3. The themed **Shipyard** wizard guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
 4. If you chose a per-user install, launch **Simple Pyrate v2.5.2** from the Start Menu next time. For portable mode, keep the extracted folder in place.
@@ -108,7 +114,14 @@ If Python and FFmpeg are available for development, start the bundled local fixt
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\Engine.Tests.ps1' -YtDlp (Get-Command yt-dlp.exe).Source -Ffmpeg (Get-Command ffmpeg.exe).Source -FixtureUrl 'http://127.0.0.1:8769/index.html' -CollectionUrl 'http://127.0.0.1:8769/collection.html'"
 ```
 
-The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). Historical code and tests in [`old_builds/`](old_builds/) were not modified.
+The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). The packaged v2.5.2 build passed 113 local checks. The [audit](docs/V2.5.2-AUDIT.md) separates that evidence from the native Windows and live-site checks still to run.
+
+## Previous builds
+
+The repository root holds v2.5.2. The archived Windows source, assets, and tests are available separately.
+
+- [v2.5.1](old_builds/v2.5.1/) retains the System.Xaml startup fix and the original diagnostic launchers.
+- [v2.5](old_builds/README.md) is the original archive at the top of `old_builds/`.
 
 ## Project files
 
@@ -133,7 +146,7 @@ The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` a
 | `tests/Engine.Tests.ps1` | Unit checks and optional real download integration tests |
 | `tests/Voyage.Tests.ps1` | Deterministic timeline and playback checks |
 | `tests/Upgrade.Tests.ps1` | v2.5.2 progress, port milestones, conversion and launcher regression checks |
-| `old_builds/` | Archived earlier build with its original tests |
+| `old_builds/` | Archived v2.5 and v2.5.1 source, assets, and tests |
 | `tests/local_fixture.py` | Local media and caption fixtures for testing |
 
 [bggg] The Background Gremlin Group • Est. 2020

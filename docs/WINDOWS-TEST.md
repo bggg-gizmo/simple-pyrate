@@ -1,6 +1,6 @@
 # Windows release-candidate checklist
 
-Run this on Windows 10 or 11 in an interactive desktop session. Do not test v2.5.2 by copying it over v2.5.1. Extract the complete package to its own folder. Current scripts are in the root of the app, not in `old_builds`.
+Run this on Windows 10 or 11 in an interactive desktop session. Do not test v2.5.2 by copying it over v2.5.1. Extract the [v2.5.2 Windows ZIP](../Simple-Pyrate-v2.5.2-Windows.zip) to its own folder. To verify the download first, compare its SHA-256 with [the packaging checksum](../SHA256SUMS.txt). Current scripts are in the root of the app, not in `old_builds`.
 
 ## 1. Prove Windows PowerShell 5.1 startup first
 
@@ -27,6 +27,7 @@ If it fails, preserve the exact console output and `%LOCALAPPDATA%\BGGG\Blackwak
 
 - In **Settings**, start each playlist, skip a track, adjust music volume, and verify it still loops after the dialog closes. Test port sound preview with SFX enabled. Toggle sea sound separately. Mute all three and verify silence.
 - Try a single MP4, an MP3, a transcript-only haul, and a small collection with all three outputs. Check the saved-file browser, session log, stop, retry, and existing-file behavior. Try a source without captions.
+- If the previous build left a playable file while the queue stayed active, retest that same link in a fresh save folder. Verify the file appears in **Saved files** and the queue row reaches a final result. If it still stalls, record the deck status, output extension, and last lines of **Ship’s log**.
 - Watch the independent port milestones at 30%, 50%, 75%, 80%, 95%, and 98%. A small item should play the reached milestones in order before the next encounter. Toggle Motion off and check the still version and immediate return after completion.
 - Observe a source already in MP4 and a WebM source that goes through the finalizer. The deck should name the merge or encode operation, track elapsed time, and show real percentage or an indeterminate bar when duration is unavailable. During a longer conversion, try **Stop active**. Confirm the source intermediate is preserved, no incomplete MP4 is reported as finished, and restarting does not overwrite a finished MP4.
 - Copy the XMR address from **Settings** and compare it with the displayed address. If you have a registered Monero wallet, open the URI and verify its recipient. Do not send a payment as part of testing.
