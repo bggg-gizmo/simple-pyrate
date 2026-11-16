@@ -254,7 +254,8 @@ function Load-BwPrefs {
         } catch { }
     }
     $script:PyrateEffectsOn=[bool](Get-BwValue $data 'PortEffects' $false)
-    $script:PyrateWizardComplete=[bool](Get-BwValue $data 'WizardComplete' $false)
+    $script:PyrateWizardComplete=([bool](Get-BwValue $data 'WizardComplete' $false) -and
+        ((Get-BwValue $data 'WizardLayoutRevision' 0) -eq $script:PyrateWizardLayoutRevision))
     $script:PyrateShortcut=[bool](Get-BwValue $data 'DesktopShortcut' $false)
     $homeFolder = [Environment]::GetFolderPath('UserProfile')
     $default = Join-Path $homeFolder 'Downloads\Simple Pyrate'
@@ -280,7 +281,8 @@ function Save-BwPrefs {
     $settings = @{
         MusicPlaylist=$script:PyrateMusicChoice; MusicVolume=$script:PyrateMusicVolume
         PortEffects=$script:PyrateEffectsOn; EffectsVolume=$script:PyrateEffectsVolume
-        WizardComplete=$script:PyrateWizardComplete; DesktopShortcut=$script:PyrateShortcut
+        WizardComplete=$script:PyrateWizardComplete; WizardLayoutRevision=$script:PyrateWizardLayoutRevision
+        DesktopShortcut=$script:PyrateShortcut
         Destination=$script:Ui.Destination.Text; Motion=$script:Ui.Motion.IsChecked; SeaSound=$script:Ui.SeaSound.IsChecked
         Video=$script:Ui.VideoMode.IsChecked; Audio=$script:Ui.AudioMode.IsChecked; Caption=$script:Ui.CaptionMode.IsChecked
         Collection=$script:Ui.Collection.IsChecked; Languages=$script:Ui.Languages.Text; AutoCaptions=$script:Ui.AutoCaptions.IsChecked
@@ -884,18 +886,34 @@ if ($SmokeTest) {
         $welcomeRows[3].Source.Drawing.Children.Count -ne 4) {
         throw 'Shipyard welcome copy or artwork smoke check failed.'
     }
-    foreach ($width in @(420,620)) {
-        $wizard.Body.Measure([Windows.Size]::new($width,[double]::PositiveInfinity))
-        $wizard.Body.Arrange([Windows.Rect]::new(0,0,$width,$wizard.Body.DesiredSize.Height))
-        $bottom=0.0
-        foreach ($row in $welcomeRows) {
-            $top=[Windows.Media.VisualTreeHelper]::GetOffset($row).Y
-            if ($top + 0.1 -lt $bottom) { throw "Shipyard welcome rows overlap at $width logical pixels." }
-            $bottom=$top+$row.RenderSize.Height
+    foreach ($page in 0..3) {
+        $wizard.Page=$page
+        Set-PyrateWizardPage $wizard
+        if ($page -eq 1 -and $wizard.Next.Content -ne 'Check tools') { throw 'Shipyard wizard smoke check failed.' }
+        $rows=@($wizard.Body.Children | ForEach-Object { $_ })
+        foreach ($width in @(340,420,620)) {
+            $wizard.Body.Measure([Windows.Size]::new($width,[double]::PositiveInfinity))
+            $wizard.Body.Arrange([Windows.Rect]::new(0,0,$width,$wizard.Body.DesiredSize.Height))
+            $bottom=0.0
+            foreach ($row in $rows) {
+                $offset=[Windows.Media.VisualTreeHelper]::GetOffset($row)
+                if ($offset.Y + 1 -lt $bottom) { throw "Shipyard page $page overlaps at $width logical pixels." }
+                if ($row -is [Windows.Controls.TextBlock] -and ($row.TextAlignment -ne 'Left' -or [Math]::Abs($offset.X) -gt 1)) {
+                    throw "Shipyard page $page has a misaligned text row at $width logical pixels."
+                }
+                if ($page -eq 2 -and $row -is [Windows.Controls.Grid]) {
+                    $label=$row.Children[0]; $path=$row.Children[1]
+                    $labelOffset=[Windows.Media.VisualTreeHelper]::GetOffset($label)
+                    $pathOffset=[Windows.Media.VisualTreeHelper]::GetOffset($path)
+                    if ($labelOffset.X + $label.RenderSize.Width -gt $pathOffset.X + 1 -or
+                        [Math]::Abs($labelOffset.Y-$pathOffset.Y) -gt 1) {
+                        throw "Shipyard dependency name and path overlap or start on different rows at $width logical pixels."
+                    }
+                }
+                $bottom=$offset.Y+$row.RenderSize.Height
+            }
         }
     }
-    $wizard.Page=1; Set-PyrateWizardPage $wizard
-    if ($wizard.Next.Content -ne 'Check tools') { throw 'Shipyard wizard smoke check failed.' }
     $wizard.Window.Close()
     if ($shot.RaidPercent -ne 98) { throw 'Port milestone smoke check failed.' }
     foreach ($playlist in $script:PyrateMusicLists) {
@@ -913,6 +931,7 @@ if ($SmokeTest) {
     }
     $script:Deck.Close()
     Write-Output 'Simple Pyrate v2.5.2 WPF smoke test passed.'
+    Write-Output "Verified first-run wizard layout revision $script:PyrateWizardLayoutRevision."
 } else { $null=$script:Deck.ShowDialog() }
 exit 0
 } catch {

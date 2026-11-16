@@ -17,10 +17,10 @@ If it fails, preserve the exact console output and `%LOCALAPPDATA%\BGGG\Blackwak
 
 ## 2. Check Shipyard and install paths
 
-1. Run `Start-Simple-Pyrate.cmd -Setup`. Verify the welcome headline and setup subtitle are readable, the banner only contains artwork, and the rows do not overlap at your Windows display scaling. Check Back, Next, Later, invalid folder handling and **Browse folders**.
+1. Run `Start-Simple-Pyrate.cmd -Setup`. Verify the welcome headline and setup subtitle are readable, the banner only contains artwork, and the rows do not overlap at your Windows display scaling. Check Back, Next, Later, invalid folder handling and **Browse folders**. Open all four pages at 100%, 125%, and 150% scaling. Verify the headings share the same left edge, the buttons stay level, and long dependency paths wrap without touching the name column.
 2. With tools already on the machine PATH, confirm the inspection shows their paths and skips UAC. Finish in portable mode, reopen the app, and confirm the destination persists.
 3. In a clean Windows account or disposable VM with missing system tools, reach **Install missing tools**, decline UAC once, and confirm the wizard offers a retry. Retry and approve. Confirm that tools are visible under the system PATH and only the tool worker elevates.
-4. Select **Install an app copy for this Windows account** and optionally **Create a Desktop shortcut**. Finish. Launch the versioned Start Menu entry and confirm it starts from `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.5.2`. Do not remove the extracted folder if your shortcut points to a portable copy.
+4. Select **Install an app copy for this Windows account** and optionally **Create a Desktop shortcut**. Finish. Launch the versioned Start Menu entry and confirm it starts from `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.5.2-setup2`. Do not remove the extracted folder if your shortcut points to a portable copy.
 5. After an install, verify the original save folder and existing files were not modified. If you used v2.5.1 first, confirm your previous save, Motion, and sea sound choices carry over. A missing download folder is created only when the wizard finishes or a haul needs it.
 
 ## 3. Exercise the haul and sounds

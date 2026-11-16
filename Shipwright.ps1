@@ -16,6 +16,7 @@ $script:PyrateMusicVolume=35
 $script:PyrateEffectsOn=$false
 $script:PyrateEffectsVolume=50
 $script:PyrateWizardComplete=$false
+$script:PyrateWizardLayoutRevision=2
 $script:PyrateShortcut=$false
 $script:PyrateTrackIndex=0
 $script:PyrateMusicPlayer=$null
@@ -263,7 +264,7 @@ function Install-PyrateUserCopy {
             throw "Install folder must not be a junction or symbolic link: $base"
         }
     }
-    $target=Join-Path $base 'App-2.5.2'
+    $target=Join-Path $base 'App-2.5.2-setup2'
     if ([IO.Directory]::Exists($target) -and (([IO.File]::GetAttributes($target) -band [IO.FileAttributes]::ReparsePoint) -ne 0)) {
         throw "Install folder must not be a junction or symbolic link: $target"
     }
@@ -317,31 +318,68 @@ function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu)
     if (!$location -or ![IO.Directory]::Exists($location)) { throw 'Windows did not report a usable shortcut folder.' }
     $link=Join-Path $location $(if ($StartMenu) { 'Simple Pyrate v2.5.2.lnk' } else { 'Simple Pyrate.lnk' })
     $shell=New-Object -ComObject WScript.Shell
+    $shortcut=$null
     try {
+        $shortcut=$shell.CreateShortcut($link)
+        $target=Join-Path $AppPath 'Start-Simple-Pyrate.cmd'
         if ([IO.File]::Exists($link)) {
-            $existing=$shell.CreateShortcut($link)
-            if ($existing.TargetPath -ine (Join-Path $AppPath 'Start-Simple-Pyrate.cmd')) {
+            if ($shortcut.TargetPath -ieq $target) { return }
+            $installRoot=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BGGG\Simple Pyrate'
+            $previous=Join-Path $installRoot 'App-2.5.2\Start-Simple-Pyrate.cmd'
+            $updated=Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd'
+            if ($shortcut.TargetPath -ine $previous -or $target -ine $updated) {
                 throw "The shortcut $link already points somewhere else and was left unchanged."
             }
-            return
         }
-        $shortcut=$shell.CreateShortcut($link)
-        $shortcut.TargetPath=Join-Path $AppPath 'Start-Simple-Pyrate.cmd'
+        $shortcut.TargetPath=$target
         $shortcut.WorkingDirectory=$AppPath
         $shortcut.Description='Simple Pyrate / The Background Gremlin Group'
         $shortcut.Save()
-    } finally { $null=[Runtime.InteropServices.Marshal]::ReleaseComObject($shell) }
+    } finally {
+        if ($shortcut) { $null=[Runtime.InteropServices.Marshal]::ReleaseComObject($shortcut) }
+        $null=[Runtime.InteropServices.Marshal]::ReleaseComObject($shell)
+    }
+}
+function Add-PyrateWizardText($Panel,[string]$Text,[string]$Role='Body') {
+    $element=New-PyrateDialogText $Panel $Text
+    $element.FlowDirection='LeftToRight'
+    $element.TextAlignment='Left'
+    $element.HorizontalAlignment='Stretch'
+    $element.VerticalAlignment='Top'
+    $element.FontFamily=[Windows.Media.FontFamily]::new('Segoe UI')
+    $element.FontSize=14
+    $element.LineHeight=21
+    $element.LineStackingStrategy='MaxHeight'
+    $element.Margin=[Windows.Thickness]::new(0,0,0,10)
+    switch ($Role) {
+        'Step' {
+            $element.FontSize=12; $element.LineHeight=18; $element.FontWeight='SemiBold'
+            $element.Foreground=Get-BwBrush '#E9BD72'
+            $element.Margin=[Windows.Thickness]::new(0,0,0,6)
+        }
+        'Title' {
+            $element.FontSize=28; $element.LineHeight=34; $element.FontWeight='SemiBold'
+            $element.Margin=[Windows.Thickness]::new(0,0,0,8)
+        }
+        'Note' {
+            $element.FontSize=13; $element.LineHeight=19
+            $element.Foreground=Get-BwBrush '#BAC9C7'
+        }
+    }
+    return $element
 }
 function Set-PyrateWizardPage($State) {
     $State.Body.Children.Clear()
+    $State.Scroll.ScrollToTop()
+    $State.Note=$null
     $State.Back.IsEnabled=($State.Page -gt 0 -and !$script:Setup)
     $State.Later.IsEnabled=(!$script:Setup)
     $State.Next.IsEnabled=(!$script:Setup)
     switch ($State.Page) {
         0 {
-            $null=New-PyrateDialogText $State.Body '01  /  FIRST-RUN SETUP' 'Kicker'
-            $null=New-PyrateDialogText $State.Body 'Welcome to Simple Pyrate' 'Heading'
-            $null=New-PyrateDialogText $State.Body 'Let''s set up your ship.'
+            $null=Add-PyrateWizardText $State.Body '01  /  FIRST-RUN SETUP' 'Step'
+            $null=Add-PyrateWizardText $State.Body 'Welcome to Simple Pyrate' 'Title'
+            $null=Add-PyrateWizardText $State.Body 'Let''s set up your ship.'
 
             # Compose the original artwork here without reusing the live voyage text.
             $artwork=[Windows.Media.DrawingGroup]::new()
@@ -370,12 +408,12 @@ function Set-PyrateWizardPage($State) {
             $art.Margin=[Windows.Thickness]::new(0,6,0,12)
             $null=$State.Body.Children.Add($art)
 
-            $null=New-PyrateDialogText $State.Body 'Choose a save folder, then check yt-dlp, FFmpeg, FFprobe, and Deno. Windows only asks for administrator approval if system tools need to be installed.'
+            $null=Add-PyrateWizardText $State.Body 'Choose a save folder, then check yt-dlp, FFmpeg, FFprobe, and Deno. Windows only asks for administrator approval if system tools need to be installed.'
             $State.Next.Content='Next'
         }
         1 {
-            $null=New-PyrateDialogText $State.Body '02  /  THE CARGO HOLD' 'Kicker'
-            $null=New-PyrateDialogText $State.Body 'Choose a save folder' 'Heading'
+            $null=Add-PyrateWizardText $State.Body '02  /  THE CARGO HOLD' 'Step'
+            $null=Add-PyrateWizardText $State.Body 'Choose a save folder' 'Title'
             $folder=[Windows.Controls.TextBox]::new()
             $folder.Text=$State.Folder; $folder.Margin=[Windows.Thickness]::new(0,6,0,8)
             [Windows.Automation.AutomationProperties]::SetName($folder,'Save folder')
@@ -390,21 +428,33 @@ function Set-PyrateWizardPage($State) {
             $install.Tag=$State; $install.add_Click({ param($sender,$e) $sender.Tag.InstallCopy=[bool]$sender.IsChecked })
             $link=New-PyrateDialogCheck $State.Body 'Create a Desktop shortcut' $State.Shortcut
             $link.Tag=$State; $link.add_Click({ param($sender,$e) $sender.Tag.Shortcut=[bool]$sender.IsChecked })
-            $null=New-PyrateDialogText $State.Body 'An installed copy gets a Start Menu shortcut. If you stay portable, keep the extracted app folder in place.' 'Small'
-            $State.Note=New-PyrateDialogText $State.Body '' 'Small'
+            $null=Add-PyrateWizardText $State.Body 'An installed copy gets a Start Menu shortcut. If you stay portable, keep the extracted app folder in place.' 'Note'
+            $State.Note=Add-PyrateWizardText $State.Body '' 'Note'
             $State.Next.Content='Check tools'
         }
         2 {
-            $null=New-PyrateDialogText $State.Body '03  /  SHIPYARD INSPECTION' 'Kicker'
-            $null=New-PyrateDialogText $State.Body 'Check the machine-wide tools' 'Heading'
+            $null=Add-PyrateWizardText $State.Body '03  /  SHIPYARD INSPECTION' 'Step'
+            $null=Add-PyrateWizardText $State.Body 'Check the machine-wide tools' 'Title'
             $State.Ready=$false
             if (!$script:Setup) { $State.Ready=Update-BwTools }
             foreach ($key in @('yt-dlp','ffmpeg','ffprobe','deno')) {
                 $path=if ($script:Tools -and $script:Tools[$key]) { $script:Tools[$key] } else { 'Missing from the system PATH' }
-                $null=New-PyrateDialogText $State.Body "$key  /  $path" 'Small'
+                $line=[Windows.Controls.Grid]::new()
+                $line.Margin=[Windows.Thickness]::new(0,0,0,5)
+                $nameColumn=[Windows.Controls.ColumnDefinition]::new()
+                $nameColumn.Width=[Windows.GridLength]::new(98)
+                $pathColumn=[Windows.Controls.ColumnDefinition]::new()
+                $pathColumn.Width=[Windows.GridLength]::new(1,'Star')
+                $line.ColumnDefinitions.Add($nameColumn); $line.ColumnDefinitions.Add($pathColumn)
+                $label=Add-PyrateWizardText $line $key 'Note'
+                $label.FontWeight='SemiBold'; $label.Margin=[Windows.Thickness]::new(0,0,12,0)
+                $value=Add-PyrateWizardText $line $path 'Note'
+                $value.Margin=[Windows.Thickness]::new(0)
+                [Windows.Controls.Grid]::SetColumn($value,1)
+                $null=$State.Body.Children.Add($line)
             }
-            $null=New-PyrateDialogText $State.Body 'Existing system tools are kept. Only missing tools are downloaded, verified, and registered on the Windows system PATH.'
-            $State.Note=New-PyrateDialogText $State.Body '' 'Small'
+            $null=Add-PyrateWizardText $State.Body 'Existing system tools are kept. Only missing tools are downloaded, verified, and registered on the Windows system PATH.'
+            $State.Note=Add-PyrateWizardText $State.Body '' 'Note'
             if ($script:Setup) {
                 $State.Note.Text='Installing and checking Windows system tools. This can take a few minutes.'
                 $work=[Windows.Controls.ProgressBar]::new()
@@ -416,24 +466,39 @@ function Set-PyrateWizardPage($State) {
             $State.Next.Content=if ($State.Ready) { 'Next' } elseif ($State.Failed) { 'Retry install' } else { 'Install missing tools' }
         }
         3 {
-            $null=New-PyrateDialogText $State.Body '04  /  READY TO SAIL' 'Kicker'
-            $null=New-PyrateDialogText $State.Body 'The chart room is ready' 'Heading'
-            $null=New-PyrateDialogText $State.Body "Save folder: $($State.Folder)" 'Small'
-            $null=New-PyrateDialogText $State.Body 'Paste a link, choose your cargo and queue a haul. The Captain''s settings hold music playlists, port sound effects and the donation link.'
-            $null=New-PyrateDialogText $State.Body $(if ($State.InstallCopy) { 'Finish will install a per-user copy and add it to the Start Menu. The current window stays open.' } else { 'Finish keeps the app portable in its current folder.' }) 'Small'
-            $State.Note=New-PyrateDialogText $State.Body '' 'Small'
+            $null=Add-PyrateWizardText $State.Body '04  /  READY TO SAIL' 'Step'
+            $null=Add-PyrateWizardText $State.Body 'The chart room is ready' 'Title'
+            $null=Add-PyrateWizardText $State.Body "Save folder: $($State.Folder)" 'Note'
+            $null=Add-PyrateWizardText $State.Body 'Paste a link, choose your cargo and queue a haul. The Captain''s settings hold music playlists, port sound effects and the donation link.'
+            $null=Add-PyrateWizardText $State.Body $(if ($State.InstallCopy) { 'Finish will install a per-user copy and add it to the Start Menu. The current window stays open.' } else { 'Finish keeps the app portable in its current folder.' }) 'Note'
+            $State.Note=Add-PyrateWizardText $State.Body '' 'Note'
             $State.Next.Content='Finish'
         }
     }
 }
 function New-PyrateWizard {
     $d=New-BwDialog 'Simple Pyrate Setup' 700 490 -NoBodyHeading
+    $d.Window.UseLayoutRounding=$true
+    $d.Window.SnapsToDevicePixels=$true
+    $d.Window.MaxWidth=[Math]::Max($d.Window.MinWidth,[Windows.SystemParameters]::WorkArea.Width-24)
+    $d.Window.MaxHeight=[Math]::Max($d.Window.MinHeight,[Windows.SystemParameters]::WorkArea.Height-24)
+    $d.Window.Width=[Math]::Min($d.Window.Width,$d.Window.MaxWidth)
+    $d.Window.Height=[Math]::Min($d.Window.Height,$d.Window.MaxHeight)
+    $d.Buttons.HorizontalAlignment='Right'
     $body=New-PyrateDialogStack $d
+    $body.UseLayoutRounding=$true
+    $body.SnapsToDevicePixels=$true
+    $body.Margin=[Windows.Thickness]::new(0,0,12,0)
+    $scroll=$d.Body.Children[0]
     $back=New-BwDialogButton $d.Buttons 'Back'
     $later=New-BwDialogButton $d.Buttons 'Later'
     $next=New-BwDialogButton $d.Buttons 'Next' $true
     $next.IsDefault=$true
-    $state=[pscustomobject]@{ Window=$d.Window; Body=$body; Back=$back; Later=$later; Next=$next
+    foreach ($button in @($back,$later,$next)) {
+        $button.MinHeight=42; $button.MinWidth=78
+        $button.VerticalAlignment='Center'
+    }
+    $state=[pscustomobject]@{ Window=$d.Window; Body=$body; Scroll=$scroll; Back=$back; Later=$later; Next=$next
         Page=0; Folder=$script:Ui.Destination.Text; Shortcut=$script:PyrateShortcut; InstallCopy=$false; Note=$null; Ready=$false; Failed=$false; Timer=$null }
     $back.Tag=$state; $later.Tag=$state; $next.Tag=$state
     $back.add_Click({ param($sender,$e) $sender.Tag.Page--; Set-PyrateWizardPage $sender.Tag })

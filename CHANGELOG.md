@@ -4,6 +4,8 @@
 
 ### Setup and ship-bell update
 
+- Aligned the four setup pages, made dependency names and paths separate columns, and kept navigation buttons level. The current launcher offers the corrected wizard once for users who completed the older one. A per-user upgrade keeps the previous app folder and updates shortcuts that point to that known install.
+
 - The first-run wizard welcomes users to Simple Pyrate and presents its setup text separately from the artwork. The idle deck now gives a direct download prompt.
 - Added a resonant ship bell with three strikes at departure, two per batch port, and five when the queue finishes. The existing **Port sound effects** setting and volume apply. The queues and transfers do not wait for audio.
 - Added regression checks for the welcome layout, bell recordings, and cue timing. The current repository source ZIP includes this update. The original Windows ZIP and its checksum are unchanged.
