@@ -5,6 +5,7 @@
 | Symptom | What to check |
 | --- | --- |
 | The app does not open | Extract the full ZIP and run `Start-Simple-Pyrate.cmd` beside the other scripts. Use Windows PowerShell 5.1 and .NET Framework 4.8. To see startup errors, run the diagnostic command below from the extracted folder. |
+| The startup error names `IQueryAmbient` or `System.Xaml` | Extract v2.5.1 into a fresh folder and launch it from there. v2.5.1 supplies the missing reference to the Windows PowerShell 5.1 compiler. |
 | Shipyard says tools are missing | Open **Shipyard** and inspect the four paths. The app checks the **machine** PATH, not a user PATH, alias, or virtual environment. FFmpeg and FFprobe must come from the same folder. Select **Install missing tools** and approve Windows’ prompt. |
 | Setup cannot download or verify an asset | Check the text in the setup window before pressing Enter. Proxies or firewalls may block GitHub or its release download redirects. A missing digest, incorrect download size, or hash mismatch stops installation of that package. Retry later or install the named dependency independently on the machine PATH. |
 | Tools are found, but the terminal cannot find them | Reopen the terminal. Simple Pyrate reads the machine PATH directly, while an existing terminal may still have an older environment. |
@@ -20,8 +21,10 @@
 Run this from Command Prompt in the extracted app folder:
 
 ```cmd
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\SimplePyrate.ps1"
+Start-Simple-Pyrate.cmd -Diagnose
 ```
+
+For a noninteractive startup check that does not install tools or download media, run `Start-Simple-Pyrate.cmd -SmokeTest`. If startup fails, the diagnostic gives the stage and writes `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log` when available.
 
 ## Report a reproducible problem
 

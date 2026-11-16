@@ -1,6 +1,6 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Simple Pyrate v2.5 • BGGG" Width="1170" Height="910" MinWidth="760" MinHeight="600"
+        Title="Simple Pyrate v2.5.1 • BGGG" Width="1170" Height="910" MinWidth="760" MinHeight="600"
         Background="#091319" Foreground="#E8E1CD" FontFamily="Segoe UI" FontSize="14"
         WindowStartupLocation="CenterScreen" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display">
   <Window.Resources>
@@ -267,7 +267,7 @@
         <Image Source="{StaticResource Seal}" Width="34" Height="36" VerticalAlignment="Center" Margin="0,0,11,0"/>
         <StackPanel VerticalAlignment="Center">
           <TextBlock Text="S I M P L E  P Y R A T E" Foreground="#F1D096" FontFamily="Georgia" FontWeight="Bold" FontSize="15"/>
-          <TextBlock Text="V2.5     /     BGGG  ·  EST. 2020" Style="{StaticResource Small}" FontFamily="Consolas" FontSize="10" Margin="0,3,0,0"/>
+          <TextBlock Text="V2.5.1   /     BGGG  ·  EST. 2020" Style="{StaticResource Small}" FontFamily="Consolas" FontSize="10" Margin="0,3,0,0"/>
         </StackPanel>
       </DockPanel>
     </Border>

@@ -24,10 +24,10 @@ From Windows Command Prompt at the repository root:
 ```cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Engine.Tests.ps1"
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tests\Voyage.Tests.ps1"
-powershell.exe -NoProfile -STA -ExecutionPolicy Bypass -File ".\SimplePyrate.ps1" -SmokeTest
+Start-Simple-Pyrate.cmd -SmokeTest
 ```
 
-The WPF smoke test opens the native window and checks scene rendering, progress, caption controls, and the narrow layout. It does not install dependencies or download media. Run it on Windows separately from the cross-platform tests.
+The WPF smoke test opens the native window and checks that the rendered scene has real pixel content, then checks progress, caption controls, and the narrow layout. It exits with code 0 on pass or 1 on a startup or test failure. It does not install dependencies or download media. Run it on Windows separately from the cross-platform tests.
 
 For a real download test without using a social platform, install Python 3, yt-dlp, and FFmpeg, then start the local test server in one terminal:
 
@@ -49,6 +49,12 @@ The Windows ZIP and its 24 files matched the repository’s original upload byte
 
 The native Windows smoke test, UAC and machine-PATH setup on Windows, and live social-platform extraction were not run in that audit. A compile or a local fixture pass does not establish Windows end-to-end behavior.
 
+## v2.5.1 startup verification
+
+On a Windows PowerShell 5.1 installation, v2.5 failed when its native compiler tried to resolve the renderer’s inherited `IQueryAmbient` interface without a reference to `System.Xaml`. v2.5.1 explicitly loads that assembly and passes it to the compiler. The launcher also accepts `-SmokeTest` and `-Diagnose`, preserving the PowerShell exit code for both modes.
+
+The v2.5.1 renderer sources compiled with the launcher’s explicit references against Microsoft .NET Framework 4.8 targeting assemblies and the x64 Windows runtime assemblies. A small compile probe verified that the interface fails to resolve without `System.Xaml` and resolves with it. The 45 engine and 20 voyage checks were rerun. This is not a native Windows run. Run the CMD smoke test on Windows before public distribution.
+
 ## Before distributing another build
 
 1. Run the engine and voyage tests, then the native WPF smoke test on Windows.
@@ -60,7 +66,7 @@ The native Windows smoke test, UAC and machine-PATH setup on Windows, and live s
 ## Verify the committed Windows ZIP
 
 ```powershell
-Get-FileHash .\Simple-Pyrate-v2.5-Windows.zip -Algorithm SHA256
+Get-FileHash .\Simple-Pyrate-v2.5.1-Windows.zip -Algorithm SHA256
 ```
 
-Compare the result with [`SHA256SUMS.txt`](../SHA256SUMS.txt). The ZIP contains the v2.5 source and assets. Repository documentation may be updated independently of the downloadable archive.
+Compare the result with [`SHA256SUMS.txt`](../SHA256SUMS.txt). The ZIP contains the v2.5.1 source and assets. Repository documentation may be updated independently of the downloadable archive.

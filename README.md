@@ -1,15 +1,15 @@
-# Simple Pyrate v2.5
+# Simple Pyrate v2.5.1
 
-![Simple Pyrate v2.5. A pirate ship in a moonlit lagoon, illustrated with the app’s original artwork.](docs/media/pyrate-banner.jpg)
+![Simple Pyrate v2.5.1. A pirate ship in a moonlit lagoon, illustrated with the app’s original artwork.](docs/media/pyrate-banner-v2.5.1.jpg)
 
 [![Platform: Windows 10 and 11](docs/media/windows.svg)](#quick-start)
-[![Edition: v2.5](docs/media/edition.svg)](CHANGELOG.md)
+[![Edition: v2.5.1](docs/media/edition-v2.5.1.svg)](CHANGELOG.md)
 [![Formats: MP4, MP3, TXT, SRT](docs/media/formats.svg)](#choose-your-cargo)
 [![Desktop: PowerShell and WPF](docs/media/runtime.svg)](docs/DEVELOPMENT.md)
 
 **A dark Windows desktop downloader for video, audio, and transcripts.** Paste a link, choose what to save, and watch your ship leave the lagoon. Each item in a channel or playlist haul gets its own port encounter.
 
-[Download the Windows ZIP](https://github.com/bggg-gizmo/simple-pyrate/raw/refs/heads/main/Simple-Pyrate-v2.5-Windows.zip) · [User guide](docs/USER-GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Development and verification](docs/DEVELOPMENT.md)
+[Download the Windows ZIP](https://github.com/bggg-gizmo/simple-pyrate/raw/refs/heads/main/Simple-Pyrate-v2.5.1-Windows.zip) · [User guide](docs/USER-GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Development and verification](docs/DEVELOPMENT.md)
 
 ## Quick start
 
@@ -19,6 +19,8 @@
 4. Paste one link per line, choose **Single item per link** or **Playlist / full channel**, select formats, and click **Queue haul**. **Ctrl+Enter** works too.
 
 **Requirements:** 64-bit Windows 10 or 11, Windows PowerShell 5.1, and .NET Framework 4.8. The app is a source bundle with a CMD launcher, not a compiled EXE. Python, Node.js, and the .NET SDK are not needed to use it. Internet access is needed for tool setup and downloads.
+
+**Upgrading from v2.5?** Extract v2.5.1 into a fresh folder. If you want to verify startup from Command Prompt, run `Start-Simple-Pyrate.cmd -SmokeTest`. It does not install tools or download media.
 
 ## Choose your cargo
 
@@ -47,7 +49,7 @@ The ship leaves the moonlit lagoon, shows source-reported waits at sea, fires a 
 - [User guide](docs/USER-GUIDE.md) covers full-channel hauls, captions, the queue, Shipyard, and removal.
 - [Troubleshooting](docs/TROUBLESHOOTING.md) covers startup, missing tools, blocked sources, and partial downloads.
 - [Development and verification](docs/DEVELOPMENT.md) covers the source layout, local tests, and Windows checks.
-- [Changelog](CHANGELOG.md) records what shipped in v2.5.
+- [Changelog](CHANGELOG.md) records what changed in v2.5.1 and what shipped in v2.5.
 
 **Developed by The Background Gremlin Group**  
 Developing unique tools for unique individuals · **BGGG / Est. 2020**

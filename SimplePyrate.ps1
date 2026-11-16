@@ -1,7 +1,9 @@
 ﻿param([switch]$SmokeTest)
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
-Add-Type -AssemblyName PresentationFramework,PresentationCore,WindowsBase,UIAutomationTypes
+$script:StartupStage = 'Loading Windows desktop assemblies'
+try {
+Add-Type -AssemblyName PresentationFramework,PresentationCore,WindowsBase,UIAutomationTypes,System.Xaml
 Add-Type -TypeDefinition @'
 using System.ComponentModel;
 namespace Blackwake {
@@ -32,6 +34,7 @@ namespace Blackwake {
     }
 }
 '@
+$script:StartupStage = 'Loading the download engine'
 . (Join-Path $PSScriptRoot 'Engine.ps1')
 $script:AppRoot = $PSScriptRoot
 $script:ProfileDir = Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BGGG\Blackwake'
@@ -70,20 +73,18 @@ function Set-DarkChrome($Window) {
         }
     } catch { }
 }
-try {
-    if (!('Pyrate.VoyageCanvas' -as [type])) {
-        Add-Type -Path @((Join-Path $PSScriptRoot 'VoyageTimeline.cs'),(Join-Path $PSScriptRoot 'VoyageCanvas.cs')) -ReferencedAssemblies @(
-            [Windows.FrameworkElement].Assembly.Location, [Windows.Media.DrawingContext].Assembly.Location,
-            [Windows.DependencyObject].Assembly.Location, [Windows.Automation.AutomationProperties].Assembly.Location,
-            [Uri].Assembly.Location
-        )
-    }
-    $xml = [Xml.XmlReader]::Create((Join-Path $PSScriptRoot 'assets\Deck.xaml'))
-    try { $script:Deck = [Windows.Markup.XamlReader]::Load($xml) } finally { $xml.Dispose() }
-} catch {
-    $null = [Windows.MessageBox]::Show("Simple Pyrate could not open the chart room." + [Environment]::NewLine + $_.Exception.ToString(),'Simple Pyrate v2.5')
-    exit 1
+$script:StartupStage = 'Compiling the voyage renderer'
+if (!('Pyrate.VoyageCanvas' -as [type])) {
+    Add-Type -Path @((Join-Path $PSScriptRoot 'VoyageTimeline.cs'),(Join-Path $PSScriptRoot 'VoyageCanvas.cs')) -ReferencedAssemblies @(
+        [Windows.FrameworkElement].Assembly.Location, [Windows.Media.DrawingContext].Assembly.Location,
+        [Windows.DependencyObject].Assembly.Location, [Windows.Automation.AutomationProperties].Assembly.Location,
+        [Uri].Assembly.Location,
+        [System.Windows.Markup.IQueryAmbient].Assembly.Location
+    )
 }
+$script:StartupStage = 'Opening the deck layout'
+$xml = [Xml.XmlReader]::Create((Join-Path $PSScriptRoot 'assets\Deck.xaml'))
+try { $script:Deck = [Windows.Markup.XamlReader]::Load($xml) } finally { $xml.Dispose() }
 $script:Deck.add_SourceInitialized({ Set-DarkChrome $script:Deck })
 $script:Ui = @{}
 foreach ($name in ('SeaSound Motion ShowTools DeckScroll Board BoardLeft BoardGap BoardRight MobileRow NewCargoCard FlightCard VoyageStage VoyageRow VoyageAnnounce DeckAtmosphere DeckDrift Paste Links LinkHint Single Collection VideoMode AudioMode CaptionMode MediaOptions VideoOptions AudioOptions CaptionOptions HeightChoice QualityChoice Languages CaptionChoice AutoCaptions Browse Destination FormError Queue ActiveStatus ActiveTitle ActiveDetail MeterTrack MeterFill MeterSweep SweepShift AccessibleMeter Percent Telemetry QueueCount Jobs EmptyQueue Cancel Remove Retry Clear OpenFolder ShowLog ShowFiles ToolStatus' -split ' ')) {
@@ -95,6 +96,7 @@ $script:Ui.Jobs.ItemsSource = $script:Rows
 $script:Voyage = [Pyrate.VoyageTimeline]::new()
 $script:VoyageClock = [Diagnostics.Stopwatch]::StartNew()
 $script:VoyageStatus='Complete'
+$script:StartupStage = 'Loading the voyage artwork'
 $script:VoyageArt = [Pyrate.VoyageCanvas]::new((Join-Path $PSScriptRoot 'assets\voyage'))
 $null = $script:Ui.VoyageStage.Children.Insert(0,$script:VoyageArt)
 $script:Ui.DeckAtmosphere.Source = [Windows.Media.Imaging.BitmapImage]::new([uri](Join-Path $PSScriptRoot 'assets\voyage\sea-and-sky.png'))
@@ -656,6 +658,7 @@ function Set-BwResponsive {
     }
 }
 
+$script:StartupStage = 'Wiring the deck controls'
 Load-BwPrefs
 Update-BwOptions
 Update-BwQueue
@@ -730,7 +733,7 @@ $script:Deck.add_Loaded({
     if ($script:SmokeTest) { return }
     Set-BwResponsive; Set-BwMotion; Set-BwSound; $null=$script:Ui.Links.Focus()
     $ready=Update-BwTools
-    Add-BwLog 'Simple Pyrate v2.5 is ready for links.'
+    Add-BwLog 'Simple Pyrate v2.5.1 is ready for links.'
     $script:Timer.Start()
     $script:VoyageTimer.Start()
     if (!$ready) {
@@ -756,7 +759,9 @@ $script:Deck.add_Closed({
     if ($script:Sound) { $script:Sound.Stop(); $script:Sound.Dispose() }
     if (!$script:SmokeTest) { Save-BwPrefs }
 })
+$script:StartupStage = 'Starting the Windows interface'
 if ($SmokeTest) {
+    $script:StartupStage = 'Running the Windows startup smoke test'
     $script:Deck.Show()
     $script:Deck.UpdateLayout()
     Set-BwResponsive
@@ -767,10 +772,23 @@ if ($SmokeTest) {
     $shot=$script:Voyage.Tick(0,$false)
     $script:VoyageArt.Present($shot,0,$false)
     $script:Deck.UpdateLayout()
-    $script:Deck.Dispatcher.Invoke([Windows.Threading.DispatcherPriority]::Render,[action]{})
+    $script:Deck.Dispatcher.Invoke([action]{},[Windows.Threading.DispatcherPriority]::Render)
     $preview=[Windows.Media.Imaging.RenderTargetBitmap]::new([int]$script:VoyageArt.ActualWidth,[int]$script:VoyageArt.ActualHeight,96,96,[Windows.Media.PixelFormats]::Pbgra32)
     $preview.Render($script:VoyageArt)
-    if ($shot.Shot -ne [Pyrate.Shot]::Battle -or $preview.PixelWidth -lt 400) { throw 'Voyage render smoke check failed.' }
+    if ($shot.Shot -ne [Pyrate.Shot]::Battle -or $preview.PixelWidth -lt 400 -or $preview.PixelHeight -lt 150) { throw 'Voyage render smoke check failed.' }
+    $stride = $preview.PixelWidth * 4
+    $pixels = [byte[]]::new($stride * $preview.PixelHeight)
+    $preview.CopyPixels($pixels,$stride,0)
+    $colors = [Collections.Generic.HashSet[int]]::new()
+    for ($y = 10; $y -lt $preview.PixelHeight; $y += 16) {
+        for ($x = 10; $x -lt $preview.PixelWidth; $x += 16) {
+            $offset = $y * $stride + $x * 4
+            if ($pixels[$offset + 3] -eq 0) { continue }
+            $rgb = ([int]$pixels[$offset + 2] -shl 16) -bor ([int]$pixels[$offset + 1] -shl 8) -bor [int]$pixels[$offset]
+            $null = $colors.Add($rgb)
+        }
+    }
+    if ($colors.Count -lt 16) { throw 'Voyage render is blank or missing its artwork.' }
     Set-BwMeter 37 $false
     if ($script:Ui.AccessibleMeter.Value -ne 37 -or $script:Ui.MeterFill.Width -le 0) { throw 'Progress meter smoke check failed.' }
     $script:Ui.CaptionMode.IsChecked=$true
@@ -780,5 +798,34 @@ if ($SmokeTest) {
     Set-BwResponsive
     if ([Windows.Controls.Grid]::GetRow($script:Ui.FlightCard) -ne 2) { throw 'Responsive layout smoke check failed.' }
     $script:Deck.Close()
-    Write-Output 'Simple Pyrate WPF smoke test passed.'
+    Write-Output 'Simple Pyrate v2.5.1 WPF smoke test passed.'
 } else { $null=$script:Deck.ShowDialog() }
+exit 0
+} catch {
+    $failure = $_
+    $details = @(
+        'Simple Pyrate v2.5.1 could not open the chart room.'
+        "Stage: $script:StartupStage"
+        "PowerShell: $($PSVersionTable.PSVersion)"
+        $failure.ToString()
+        $failure.ScriptStackTrace
+        $failure.Exception.ToString()
+    ) -join [Environment]::NewLine
+    $logPath = $null
+    try {
+        $profileRoot = [Environment]::GetFolderPath('LocalApplicationData')
+        if ($profileRoot) {
+            $logFolder = Join-Path $profileRoot 'BGGG\Blackwake'
+            $null = [IO.Directory]::CreateDirectory($logFolder)
+            $logPath = Join-Path $logFolder 'startup-error.log'
+            [IO.File]::WriteAllText($logPath,$details,[Text.UTF8Encoding]::new($false))
+        }
+    } catch { $logPath = $null }
+    try { [Console]::Error.WriteLine($details) } catch { }
+    if (!$SmokeTest) {
+        $message = "Simple Pyrate v2.5.1 could not open the chart room.`r`n`r`nStage: $script:StartupStage`r`n$($failure.Exception.Message)"
+        if ($logPath) { $message += "`r`n`r`nStartup log: $logPath" }
+        try { $null = [Windows.MessageBox]::Show($message,'Simple Pyrate v2.5.1') } catch { }
+    }
+    exit 1
+}

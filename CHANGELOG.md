@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.5.1
+
+- Fixed Windows PowerShell 5.1 startup by explicitly referencing System.Xaml when compiling the WPF voyage renderer.
+- Added `-SmokeTest` and `-Diagnose` to the CMD launcher and preserved the exit code. Startup errors now name the failed stage and, when available, write a local log.
+- Added a new v2.5.1 archive and checksum. The v2.5 archive is retained for version history.
+
 ## v2.5
 
 - Windows launcher and dark-only WPF desktop interface under the Simple Pyrate name.
