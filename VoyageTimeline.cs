@@ -220,7 +220,7 @@ namespace Pyrate {
             switch (shot) {
                 case Shot.Departure:
                     headline="Setting sail";
-                    detail="Leaving the moonlit lagoon";
+                    detail="Leaving harbor";
                     break;
                 case Shot.OpenSea:
                     var target=current ?? (ports.Count > 0 ? ports.Peek() : null);
@@ -244,8 +244,8 @@ namespace Pyrate {
                         result == "Cancelled" ? "Finished cargo is safe" : "The voyage has ended";
                     break;
                 default:
-                    headline=hasReturned ? "Back at anchor" : "The moonlit lagoon";
-                    detail=hasReturned ? "The crew is home" : "The crew awaits your next haul";
+                    headline=hasReturned ? "Back at anchor" : "Ready to download";
+                    detail=hasReturned ? "The crew is home" : "Paste a link to start a download";
                     port=0; mode="";
                     break;
             }

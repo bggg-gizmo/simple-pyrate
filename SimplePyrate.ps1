@@ -144,7 +144,7 @@ function Show-BwError([string]$Text) {
 function Get-BwBrush([string]$Color) {
     return [Windows.Media.BrushConverter]::new().ConvertFromString($Color)
 }
-function New-BwDialog([string]$Title,[int]$Width,[int]$Height) {
+function New-BwDialog([string]$Title,[int]$Width,[int]$Height,[switch]$NoBodyHeading) {
     $w = [Windows.Window]::new()
     $w.Owner = $script:Deck; $w.Title = $Title; $w.Width=$Width; $w.Height=$Height
     $w.MinWidth = [Math]::Min($Width,420); $w.MinHeight = [Math]::Min($Height,240)
@@ -154,9 +154,11 @@ function New-BwDialog([string]$Title,[int]$Width,[int]$Height) {
     $w.Resources.MergedDictionaries.Add($script:Deck.Resources)
     $w.add_SourceInitialized({ param($sender,$e) Set-DarkChrome $sender })
     $root = [Windows.Controls.DockPanel]::new(); $root.Margin=[Windows.Thickness]::new(18)
-    $head = [Windows.Controls.TextBlock]::new(); $head.Text=$Title
-    $head.Style = $script:Deck.FindResource('Heading'); $head.Margin=[Windows.Thickness]::new(0,0,0,10)
-    [Windows.Controls.DockPanel]::SetDock($head,'Top'); $null=$root.Children.Add($head)
+    if (!$NoBodyHeading) {
+        $head = [Windows.Controls.TextBlock]::new(); $head.Text=$Title
+        $head.Style = $script:Deck.FindResource('Heading'); $head.Margin=[Windows.Thickness]::new(0,0,0,10)
+        [Windows.Controls.DockPanel]::SetDock($head,'Top'); $null=$root.Children.Add($head)
+    }
     $buttons = [Windows.Controls.WrapPanel]::new(); $buttons.Margin=[Windows.Thickness]::new(0,10,0,0)
     [Windows.Controls.DockPanel]::SetDock($buttons,'Bottom'); $null=$root.Children.Add($buttons)
     $body = [Windows.Controls.DockPanel]::new(); $null=$root.Children.Add($body)
@@ -867,6 +869,24 @@ if ($SmokeTest) {
     if ($settings.Address.Text -cne $script:PyrateAddress) { throw 'Settings donation address smoke check failed.' }
     $settings.Dialog.Window.Close()
     $wizard=New-PyrateWizard
+    $welcomeRows=@($wizard.Body.Children | ForEach-Object { $_ })
+    if ($welcomeRows.Count -ne 5 -or $welcomeRows[1].Text -cne 'Welcome to Simple Pyrate' -or
+        $welcomeRows[2].Text -cne 'Let''s set up your ship.' -or
+        $welcomeRows[3] -isnot [Windows.Controls.Image] -or
+        $welcomeRows[3].Source -isnot [Windows.Media.DrawingImage] -or
+        $welcomeRows[3].Source.Drawing.Children.Count -ne 4) {
+        throw 'Shipyard welcome copy or artwork smoke check failed.'
+    }
+    foreach ($width in @(420,620)) {
+        $wizard.Body.Measure([Windows.Size]::new($width,[double]::PositiveInfinity))
+        $wizard.Body.Arrange([Windows.Rect]::new(0,0,$width,$wizard.Body.DesiredSize.Height))
+        $bottom=0.0
+        foreach ($row in $welcomeRows) {
+            $top=[Windows.Media.VisualTreeHelper]::GetOffset($row).Y
+            if ($top + 0.1 -lt $bottom) { throw "Shipyard welcome rows overlap at $width logical pixels." }
+            $bottom=$top+$row.RenderSize.Height
+        }
+    }
     $wizard.Page=1; Set-PyrateWizardPage $wizard
     if ($wizard.Next.Content -ne 'Check tools') { throw 'Shipyard wizard smoke check failed.' }
     $wizard.Window.Close()

@@ -9,7 +9,8 @@ function Require([bool]$Condition,[string]$Label) {
 }
 function Step($Timeline,[double]$Seconds,[bool]$Motion=$true) { return $Timeline.Tick($Seconds,$Motion) }
 $sea=[Pyrate.VoyageTimeline]::new()
-Require ((Step $sea 0).Shot -eq 'Harbor') 'Clean launch opens on the moonlit lagoon'
+$idle=Step $sea 0
+Require ($idle.Shot -eq 'Harbor' -and $idle.Headline -ceq 'Ready to download' -and $idle.Detail -ceq 'Paste a link to start a download') 'Idle deck opens at harbor with download instructions'
 $sea.Start(0)
 Require ((Step $sea .4).Headline -eq 'Setting sail') 'A new haul begins with the departure shot'
 $sea.BeginWait(.5,3,'Source-requested pause')

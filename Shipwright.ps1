@@ -286,14 +286,38 @@ function Set-PyrateWizardPage($State) {
     $State.Next.IsEnabled=(!$script:Setup)
     switch ($State.Page) {
         0 {
-            $null=New-PyrateDialogText $State.Body '01  /  WELCOME ABOARD' 'Kicker'
-            $null=New-PyrateDialogText $State.Body 'Outfit your ship' 'Heading'
-            $art=[Pyrate.VoyageCanvas]::new((Join-Path $script:AppRoot 'assets\voyage'))
-            $art.Height=126; $art.ClipToBounds=$true
-            $arrival=[Pyrate.VoyageTimeline]::new()
-            $art.Present($arrival.Tick(0,$false),0,$false)
-            $art.Margin=[Windows.Thickness]::new(0,6,0,10); $null=$State.Body.Children.Add($art)
-            $null=New-PyrateDialogText $State.Body 'Choose where your cargo goes, then check yt-dlp, FFmpeg, FFprobe, and Deno. Windows asks for administrator approval only if Shipyard needs to install system tools.'
+            $null=New-PyrateDialogText $State.Body '01  /  FIRST-RUN SETUP' 'Kicker'
+            $null=New-PyrateDialogText $State.Body 'Welcome to Simple Pyrate' 'Heading'
+            $null=New-PyrateDialogText $State.Body 'Let''s set up your ship.'
+
+            # Compose the original artwork here without reusing the live voyage text.
+            $artwork=[Windows.Media.DrawingGroup]::new()
+            $voyageFolder=Join-Path $script:AppRoot 'assets\voyage'
+            foreach ($layer in @(
+                @{ File='sea-and-sky.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) },
+                @{ File='lagoon.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) },
+                @{ File='pyrate-ship.png'; Bounds=[Windows.Rect]::new(504,125,323.7,172.38) },
+                @{ File='fog.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) }
+            )) {
+                $bitmap=[Windows.Media.Imaging.BitmapImage]::new()
+                $bitmap.BeginInit()
+                $bitmap.CacheOption='OnLoad'
+                $bitmap.UriSource=[uri](Join-Path $voyageFolder $layer.File)
+                $bitmap.EndInit()
+                $drawing=[Windows.Media.ImageDrawing]::new()
+                $drawing.ImageSource=$bitmap
+                $drawing.Rect=$layer.Bounds
+                $artwork.Children.Add($drawing)
+            }
+            if ($artwork.CanFreeze) { $artwork.Freeze() }
+            $art=[Windows.Controls.Image]::new()
+            $art.Source=[Windows.Media.DrawingImage]::new($artwork)
+            $art.Height=146; $art.Stretch='UniformToFill'; $art.ClipToBounds=$true
+            $art.IsHitTestVisible=$false
+            $art.Margin=[Windows.Thickness]::new(0,6,0,12)
+            $null=$State.Body.Children.Add($art)
+
+            $null=New-PyrateDialogText $State.Body 'Choose a save folder, then check yt-dlp, FFmpeg, FFprobe, and Deno. Windows only asks for administrator approval if system tools need to be installed.'
             $State.Next.Content='Next'
         }
         1 {
@@ -350,7 +374,7 @@ function Set-PyrateWizardPage($State) {
     }
 }
 function New-PyrateWizard {
-    $d=New-BwDialog 'Shipyard  /  First-run setup' 700 490
+    $d=New-BwDialog 'Simple Pyrate Setup' 700 490 -NoBodyHeading
     $body=New-PyrateDialogStack $d
     $back=New-BwDialogButton $d.Buttons 'Back'
     $later=New-BwDialogButton $d.Buttons 'Later'
