@@ -127,7 +127,7 @@ function Draw-BwVoyage {
 function Complete-BwVoyage([string]$Status,[bool]$MoreQueued) {
     $script:Voyage.Finish($script:VoyageClock.Elapsed.TotalSeconds,$Status,$MoreQueued)
     if ($script:PyrateBellPlan.Finish($MoreQueued,$Status)) { Queue-PyrateBell 'Finish' }
-    elseif (!$MoreQueued -and $Status -eq 'Cancelled') { Stop-PyrateBells }
+    elseif (!$MoreQueued -and $Status -eq 'Cancelled') { Stop-PyrateBells; Stop-PyrateEffects }
     if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
 }
 function Test-BwVoyageContinuing {
@@ -257,7 +257,7 @@ function Load-BwPrefs {
             Set-Variable -Scope Script -Name $entry.Key -Value ([Math]::Max(0,[Math]::Min([int]$entry.Value[2],$value)))
         } catch { }
     }
-    $script:PyrateEffectsOn=[bool](Get-BwValue $data 'PortEffects' $false)
+    $script:PyrateEffectsOn=[bool](Get-BwValue $data 'PortEffects' $true)
     $script:PyrateWizardComplete=([bool](Get-BwValue $data 'WizardComplete' $false) -and
         ((Get-BwValue $data 'WizardLayoutRevision' 0) -eq $script:PyrateWizardLayoutRevision))
     $script:PyrateShortcut=[bool](Get-BwValue $data 'DesktopShortcut' $false)
@@ -452,7 +452,10 @@ function Start-BwNext {
             Invoke-BwJob $job $tools $events $source
         }.ToString()).AddArgument((Join-Path $script:AppRoot 'Engine.ps1')).AddArgument($row.Job).AddArgument($script:Tools).AddArgument($script:Events).AddArgument($source)
         $script:Run=[pscustomobject]@{ Worker=$worker; Token=$source; Handle=$worker.BeginInvoke(); Result=$null; Phase=''; ProcessingClock=$null; ProcessingTelemetry='' }
-        if (!$script:Voyage.Running -and !$script:Voyage.ReturnPending) { $script:PyrateEffectKey='' }
+        if (!$script:Voyage.Running -and !$script:Voyage.ReturnPending) {
+            $script:PyrateEffectKey=''
+            $script:PyrateCannonKey=''
+        }
         $script:Voyage.Start($script:VoyageClock.Elapsed.TotalSeconds)
         if ($script:PyrateBellPlan.BeginJob(($row.Job.Scope -eq 'collection'),@($row.Job.Modes).Count,(Test-BwVoyageContinuing))) {
             Queue-PyrateBell 'Start'
@@ -780,17 +783,21 @@ $script:Deck.add_PreviewKeyDown({
     param($sender,$e)
     if ($e.Key -eq 'Enter' -and ([Windows.Input.Keyboard]::Modifiers -band [Windows.Input.ModifierKeys]::Control)) { $e.Handled=$true; Submit-BwQueue }
 })
-$script:VoyageTimer=[Windows.Threading.DispatcherTimer]::new([Windows.Threading.DispatcherPriority]::Background)
-$script:VoyageTimer.Interval=[TimeSpan]::FromMilliseconds(33)
-$script:VoyageTimer.add_Tick({
+$script:VoyageRenderTime=$null
+$script:VoyageRendering=$false
+$script:VoyageRenderHandler=[EventHandler]{
+    param($sender,$e)
     if ($script:Deck.IsVisible -and $script:Deck.WindowState -ne 'Minimized' -and
-        ($script:Ui.Motion.IsChecked -or $script:Voyage.NeedsClock)) {
+        ($script:Ui.Motion.IsChecked -or $script:Voyage.NeedsClock) -and
+        $e.RenderingTime -ne $script:VoyageRenderTime) {
+        $script:VoyageRenderTime=$e.RenderingTime
         try { Draw-BwVoyage } catch {
-            $script:VoyageTimer.Stop()
+            [Windows.Media.CompositionTarget]::remove_Rendering($script:VoyageRenderHandler)
+            $script:VoyageRendering=$false
             Add-BwLog "Voyage playback stopped: $($_.Exception.Message)"
         }
     }
-})
+}
 $script:Timer=[Windows.Threading.DispatcherTimer]::new()
 $script:Timer.Interval=[TimeSpan]::FromMilliseconds(110)
 $script:Timer.add_Tick({
@@ -814,7 +821,8 @@ $script:Deck.add_Loaded({
     $ready=Update-BwTools
     Add-BwLog "Simple Pyrate v$script:PyrateVersion is ready for links."
     $script:Timer.Start()
-    $script:VoyageTimer.Start()
+    [Windows.Media.CompositionTarget]::add_Rendering($script:VoyageRenderHandler)
+    $script:VoyageRendering=$true
     if (!$ready) { $script:Hold=$true }
     if ($script:SetupWizard -or !$script:PyrateWizardComplete -or !$ready) { Show-PyrateWizard }
 })
@@ -832,10 +840,13 @@ $script:Deck.add_Closing({
 })
 $script:Deck.add_Closed({
     $script:Timer.Stop()
-    $script:VoyageTimer.Stop()
+    if ($script:VoyageRendering) {
+        [Windows.Media.CompositionTarget]::remove_Rendering($script:VoyageRenderHandler)
+        $script:VoyageRendering=$false
+    }
     if ($script:Sound) { $script:Sound.Stop(); $script:Sound.Dispose() }
     if ($script:PyrateMusicPlayer) { $script:PyrateMusicPlayer.Close() }
-    if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Close() }
+    Stop-PyrateEffects
     Stop-PyrateBells
     if (!$script:SmokeTest) { Save-BwPrefs }
 })

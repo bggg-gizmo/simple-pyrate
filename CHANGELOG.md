@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.5
+
+- Synchronize visual updates with WPF rendering and dissolve between consecutive voyage shots. Keep the active battle title readable through longer transfers.
+- Ease dinghies, crew, cargo, fires, and the final port damage between milestone poses. An incoming batch cannot shorten the animation that is already playing. Keep all six original thresholds and the Motion-off behavior.
+- Play each port sound with its own voice so the next cue no longer stops the previous one. Keep the existing recordings, volumes, playlists, ambience, and three/two/five ship-bell patterns. Port effects are enabled for a new profile and existing preferences are preserved.
+- Keep the previous build under `old_builds/v2.5.4/`. Native Windows rendering and listening checks are pending.
+
 ## v2.5.4
 
 - Restore the original ship rendering on the Shipyard welcome page, including the original camera framing, water, wake, fog, and shading. The welcome title and subtitle stay outside the artwork.

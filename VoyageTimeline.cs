@@ -50,12 +50,77 @@ namespace Pyrate {
         }
     }
 
+    public struct RaidMotion {
+        public double BoatPresence { get; private set; }
+        public double BoatTravel { get; private set; }
+        public double BoatLift { get; private set; }
+        public double CrewShore { get; private set; }
+        public double CrewAboard { get; private set; }
+        public double CargoPresence { get; private set; }
+        public double CargoStowed { get; private set; }
+        public double CargoLift { get; private set; }
+        public double OarEffort { get; private set; }
+        public double WalkEffort { get; private set; }
+
+        private static double Ease(double x) {
+            x=Math.Max(0,Math.Min(1,x));
+            return x*x*(3-2*x);
+        }
+        private static double Span(double t,double from,double until) {
+            return Ease((t-from)/(until-from));
+        }
+        private static double Effort(double t,double from,double until) {
+            if (t<=from || t>=until) return 0;
+            double p=(t-from)/(until-from);
+            return Math.Sin(Math.PI*p);
+        }
+        // Normalized poses share endpoints so a milestone changes the action, not the actor's location.
+        public static RaidMotion Sample(int stage,double t) {
+            var state=new RaidMotion();
+            if (stage<2) return state;
+            state.BoatPresence=stage==2 ? Span(t,0,.18) : 1;
+            state.CargoPresence=stage<3 ? 0 : stage==3 ? Span(t,0,.16) : 1;
+            switch(stage) {
+                case 2:
+                    state.BoatTravel=Span(t,0,.62);
+                    state.OarEffort=Effort(t,0,.62);
+                    state.CrewShore=Span(t,.62,1);
+                    state.WalkEffort=Effort(t,.62,1);
+                    break;
+                case 3:
+                    state.BoatTravel=1;
+                    state.CrewShore=1-Span(t,0,.86);
+                    state.WalkEffort=Effort(t,0,.86);
+                    state.CargoStowed=Span(t,.84,1);
+                    break;
+                case 4:
+                    state.BoatTravel=1-Span(t,0,.54);
+                    state.OarEffort=Effort(t,0,.54);
+                    state.CargoStowed=1;
+                    state.CargoLift=Span(t,.54,1);
+                    break;
+                case 5:
+                    state.CargoStowed=1;
+                    state.CargoLift=1;
+                    state.CrewAboard=Span(t,0,1);
+                    break;
+                default:
+                    state.CargoStowed=1;
+                    state.CargoLift=1;
+                    state.CrewAboard=1;
+                    state.BoatLift=Span(t,0,1);
+                    break;
+            }
+            return state;
+        }
+    }
+
     public sealed class VoyageTimeline {
         private sealed class Encounter {
             public int Ordinal;
             public string Mode, Title, Detail;
             public bool Resolved, Started;
-            public double WaitUntil, RaidSince, BattleSince;
+            public double WaitUntil, RaidSince, BattleSince, RaidBeat;
             public int TargetStage, VisibleStage;
             public bool Presented;
         }
@@ -100,13 +165,18 @@ namespace Pyrate {
             ResolvePort();
         }
 
-        private double BeatLength() { return ports.Count>=12 ? .34 : ports.Count>=4 ? .49 : .74; }
+        private double BeatLength() { return ports.Count>=12 ? .58 : ports.Count>=4 ? .72 : .88; }
 
         private void UpdateRaid(double now, bool motion) {
-            if (!motion) { current.VisibleStage=current.TargetStage; current.RaidSince=now; return; }
-            if (current.VisibleStage<current.TargetStage && now-current.RaidSince>=BeatLength()) {
+            if (!motion) {
+                current.VisibleStage=current.TargetStage;
+                current.RaidSince=now-current.RaidBeat;
+                return;
+            }
+            if (current.VisibleStage<current.TargetStage && now-current.RaidSince>=current.RaidBeat) {
                 current.VisibleStage++;
                 current.RaidSince=now;
+                current.RaidBeat=BeatLength();
             }
         }
 
@@ -207,6 +277,7 @@ namespace Pyrate {
                         displayPort=current.Ordinal; displayMode=current.Mode; displayDetail=current.Detail;
                         if (!current.Presented) {
                             current.Presented=true; current.RaidSince=now; current.BattleSince=now;
+                            current.RaidBeat=BeatLength();
                         }
                         Cut(Shot.Battle,now,BattleLength(motion));
                         return true;
@@ -216,7 +287,7 @@ namespace Pyrate {
                 case Shot.Battle:
                     if (current == null) { Cut(Shot.OpenSea,now,Crossing(motion)); return true; }
                     UpdateRaid(now,motion);
-                    double finalHold=ports.Count>=12 ? .34 : ports.Count>=4 ? .49 : .83;
+                    double finalHold=Math.Max(.83,current.RaidBeat);
                     if ((!current.Resolved && now < current.WaitUntil) ||
                         (current.Resolved && (!motion || (age >= duration && current.VisibleStage==current.TargetStage &&
                           (current.TargetStage==0 || now-current.RaidSince>=finalHold))))) {
@@ -276,7 +347,7 @@ namespace Pyrate {
             bool inRaid=shot==Shot.Battle && current!=null;
             return new VoyageFrame(shot,age,duration,port,headline,detail,mode,waiting,
                 inRaid ? current.VisibleStage : 0, inRaid ? Math.Max(0,now-current.RaidSince) : 0,
-                inRaid ? Math.Max(0,now-current.BattleSince) : 0, BeatLength());
+                inRaid ? Math.Max(0,now-current.BattleSince) : 0, inRaid ? current.RaidBeat : BeatLength());
         }
     }
 }

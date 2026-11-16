@@ -13,15 +13,16 @@ $script:PyrateEffects=@('cannon','embers','boats','cargo','hoist','aboard','ruin
 $script:PyrateAddress='8AEyf8SfkYx6sHrLsp8aSAXrS8r9BZmnBfA6US9taa4mWpPXMNitipudPXU1MynA2mYHEXTsRZJik45gFjRsmeJ6HxRBEvn'
 $script:PyrateMusicChoice=0
 $script:PyrateMusicVolume=35
-$script:PyrateEffectsOn=$false
+$script:PyrateEffectsOn=$true
 $script:PyrateEffectsVolume=50
 $script:PyrateWizardComplete=$false
 $script:PyrateWizardLayoutRevision=4
 $script:PyrateShortcut=$false
 $script:PyrateTrackIndex=0
 $script:PyrateMusicPlayer=$null
-$script:PyrateEffectPlayer=$null
+$script:PyrateEffectPlayers=[Collections.Generic.List[Windows.Media.MediaPlayer]]::new()
 $script:PyrateEffectKey=''
+$script:PyrateCannonKey=''
 $script:PyrateBellPlan=[Pyrate.ShipBellPlan]::new()
 $script:PyrateBellAssets=@{ Start='ship-bell-start'; Port='ship-bell-port'; Finish='ship-bell-finish' }
 $script:PyrateBellQueue=[Collections.Generic.Queue[string]]::new()
@@ -90,18 +91,34 @@ function Set-PyrateMusic([bool]$Reset) {
         if ($script:PyrateMusicNow) { $script:PyrateMusicNow.Text="Now playing  /  $($script:PyrateMusicNames[$track])" }
     } catch { Add-BwLog "Could not start playlist: $($_.Exception.Message)" }
 }
+function Close-PyrateEffect([Windows.Media.MediaPlayer]$Player) {
+    if ($Player -and $script:PyrateEffectPlayers.Remove($Player)) { $Player.Close() }
+}
+function Stop-PyrateEffects {
+    foreach ($player in $script:PyrateEffectPlayers.ToArray()) { Close-PyrateEffect $player }
+}
 function Play-PyrateEffect([int]$Index) {
     if (!$script:PyrateEffectsOn -or $script:PyrateEffectsVolume -le 0 -or $script:SmokeTest) { return }
+    $player=$null
+    $name=$script:PyrateEffects[$Index]
     try {
-        if (!$script:PyrateEffectPlayer) {
-            $script:PyrateEffectPlayer=[Windows.Media.MediaPlayer]::new()
-            $script:PyrateEffectPlayer.add_MediaFailed({ param($sender,$e) Add-BwLog "Port sound unavailable: $($e.ErrorException.Message)" })
-        }
-        $player=$script:PyrateEffectPlayer
-        $player.Close(); $player.Volume=$script:PyrateEffectsVolume/100.0
-        $name=$script:PyrateEffects[$Index]
-        $player.Open([uri](Join-Path $script:AppRoot "assets\audio\$name.wav")); $player.Play()
-    } catch { Add-BwLog "Could not play port sound: $($_.Exception.Message)" }
+        # Each one-shot has its own voice so a new stage cannot cut it off.
+        if ($script:PyrateEffectPlayers.Count -ge 12) { Close-PyrateEffect $script:PyrateEffectPlayers[0] }
+        $player=[Windows.Media.MediaPlayer]::new()
+        $script:PyrateEffectPlayers.Add($player)
+        $player.add_MediaEnded({ param($sender,$e) Close-PyrateEffect $sender })
+        $player.add_MediaFailed({
+            param($sender,$e)
+            Close-PyrateEffect $sender
+            Add-BwLog "Port sound unavailable: $($e.ErrorException.Message)"
+        })
+        $player.Volume=$script:PyrateEffectsVolume/100.0
+        $player.Open([uri](Join-Path $script:AppRoot "assets\audio\$name.wav"))
+        $player.Play()
+    } catch {
+        Close-PyrateEffect $player
+        Add-BwLog "Could not play port sound '$name': $($_.Exception.Message)"
+    }
 }
 function Stop-PyrateBells {
     $script:PyrateBellQueue.Clear()
@@ -147,11 +164,21 @@ function Queue-PyrateBell([ValidateSet('Start','Port','Finish')][string]$Cue) {
 }
 function Update-PyrateRaidSound($Frame) {
     if ($Frame.Shot -ne [Pyrate.Shot]::Battle) { return }
-    $cue=if ($Frame.RaidStage -eq 0) { [int][Math]::Floor($Frame.RaidSceneAge/2.7) } else { 0 }
-    $key="$($Frame.Port)/$($Frame.RaidStage)/$cue"
-    if ($key -eq $script:PyrateEffectKey) { return }
-    $script:PyrateEffectKey=$key
-    Play-PyrateEffect $Frame.RaidStage
+    if ($Frame.RaidStage -lt 2 -and $Frame.RaidSceneAge -ge .13) {
+        $cue=[int][Math]::Floor(($Frame.RaidSceneAge-.13)/2.7)
+        $cannon="$($Frame.Port)/$cue"
+        if ($cannon -ne $script:PyrateCannonKey) {
+            $script:PyrateCannonKey=$cannon
+            Play-PyrateEffect 0
+        }
+    }
+    if ($Frame.RaidStage -gt 0) {
+        $stage="$($Frame.Port)/$($Frame.RaidStage)"
+        if ($stage -ne $script:PyrateEffectKey) {
+            $script:PyrateEffectKey=$stage
+            Play-PyrateEffect $Frame.RaidStage
+        }
+    }
 }
 function New-PyrateSettings {
     $d=New-BwDialog 'Captain''s settings' 600 645
@@ -195,15 +222,15 @@ function New-PyrateSettings {
         param($sender,$e)
         $script:PyrateEffectsOn=[bool]$sender.IsChecked; $sender.Tag.IsEnabled=$script:PyrateEffectsOn
         if (!$script:PyrateEffectsOn) {
-            if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Close() }
+            Stop-PyrateEffects
             Stop-PyrateBells
         }
     })
     $sfxVol.add_ValueChanged({
         param($sender,$e)
         $script:PyrateEffectsVolume=[int]$sender.Value
-        if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Volume=$sender.Value/100 }
-        if ($sender.Value -le 0) { Stop-PyrateBells }
+        foreach ($voice in $script:PyrateEffectPlayers.ToArray()) { $voice.Volume=$sender.Value/100 }
+        if ($sender.Value -le 0) { Stop-PyrateBells; Stop-PyrateEffects }
         elseif ($script:PyrateBellPlayer) { $script:PyrateBellPlayer.Volume=$sender.Value/100 }
     })
     $next.add_Click({ $script:PyrateTrackIndex++; Set-PyrateMusic $false })
@@ -277,7 +304,7 @@ function Install-PyrateUserCopy {
         'assets\voyage\port-0.png','assets\voyage\port-1.png','assets\voyage\port-2.png','assets\voyage\port-3.png',
         'README.md','CHANGELOG.md','docs\USER-GUIDE.md','docs\TROUBLESHOOTING.md','docs\DEVELOPMENT.md',
         'docs\WINDOWS-TEST.md','docs\V2.5.2-AUDIT.md','docs\media\pyrate-banner-v2.5.2.jpg','docs\media\edition-v2.5.2.svg',
-        'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg',
+        'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg','docs\media\edition-v2.5.5.svg',
         'docs\media\runtime.svg','docs\media\formats.svg','docs\media\at-anchor.jpg','docs\media\port-battle.jpg',
         'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\local_fixture.py'
     )
@@ -329,7 +356,8 @@ function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu)
             $previous=@(
                 (Join-Path $installRoot 'App-2.5.2\Start-Simple-Pyrate.cmd'),
                 (Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd'),
-                (Join-Path $installRoot 'App-2.5.3\Start-Simple-Pyrate.cmd')
+                (Join-Path $installRoot 'App-2.5.3\Start-Simple-Pyrate.cmd'),
+                (Join-Path $installRoot 'App-2.5.4\Start-Simple-Pyrate.cmd')
             )
             $updated=Join-Path (Join-Path $installRoot "App-$script:PyrateVersion") 'Start-Simple-Pyrate.cmd'
             if ($shortcut.TargetPath -notin $previous -or $target -ine $updated) {
