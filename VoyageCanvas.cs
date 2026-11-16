@@ -92,8 +92,18 @@ namespace Pyrate {
             dpi=VisualTreeHelper.GetDpi(this).PixelsPerDip;
             var viewport = new Rect(0,0,w,h);
             dc.PushClip(new RectangleGeometry(viewport));
+            if (frame==null) { dc.DrawRectangle(ink,null,viewport); dc.Pop(); return; }
+            DrawScenery(dc,viewport);
+            DrawHud(dc,w,h);
+            if (motion && (frame.Shot==Shot.OpenSea || frame.Shot==Shot.Battle || frame.Shot==Shot.Return) && frame.Age<.28) {
+                double opacity=.6*(1-Ease(frame.Age/.28));
+                dc.PushOpacity(opacity); dc.DrawRectangle(ink,null,viewport); dc.Pop();
+            }
+            dc.Pop();
+        }
+        private void DrawScenery(DrawingContext dc,Rect viewport) {
+            double w=viewport.Width, h=viewport.Height;
             dc.DrawRectangle(ink,null,viewport);
-            if (frame==null) { dc.Pop(); return; }
             // Slight overscan prevents exposed edges on camera moves. At narrow widths keep the art to the right.
             double scale=Math.Max(w/1200,h/390);
             double shift=(w-1200*scale)*.72;
@@ -104,12 +114,30 @@ namespace Pyrate {
 
             dc.DrawRectangle(edge,null,viewport);
             dc.DrawRectangle(seaShade,null,new Rect(0,h*.71,w,h*.29));
-            DrawHud(dc,w,h);
-            if (motion && (frame.Shot==Shot.OpenSea || frame.Shot==Shot.Battle || frame.Shot==Shot.Return) && frame.Age<.28) {
-                double opacity=.6*(1-Ease(frame.Age/.28));
-                dc.PushOpacity(opacity); dc.DrawRectangle(ink,null,viewport); dc.Pop();
+        }
+        // The welcome page uses the same harbor scenery without the deck's status text.
+        public static FrameworkElement CreateHarborArtwork(string root) {
+            var renderer = new VoyageCanvas(root);
+            renderer.Present(new VoyageTimeline().Tick(0,false),0,false);
+            return new HarborArtwork(renderer);
+        }
+        private sealed class HarborArtwork : FrameworkElement {
+            private readonly VoyageCanvas renderer;
+            public HarborArtwork(VoyageCanvas renderer) {
+                this.renderer=renderer;
+                IsHitTestVisible=false;
+                Focusable=false;
+                ClipToBounds=true;
             }
-            dc.Pop();
+            protected override void OnRender(DrawingContext dc) {
+                base.OnRender(dc);
+                double w=ActualWidth, h=ActualHeight;
+                if (w<20 || h<20) return;
+                var viewport=new Rect(0,0,w,h);
+                dc.PushClip(new RectangleGeometry(viewport));
+                renderer.DrawScenery(dc,viewport);
+                dc.Pop();
+            }
         }
         private void DrawWorld(DrawingContext dc) {
             double p=motion ? Ease(frame.Progress) : 1;

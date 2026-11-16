@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.4
+
+- Restore the original ship rendering on the Shipyard welcome page, including the original camera framing, water, wake, fog, and shading. The welcome title and subtitle stay outside the artwork.
+- Keep the deck cinematics, port milestones, music, sound effects, ship bells, and settings unchanged.
+- Extend the Windows smoke test to render the Shipyard ship artwork at three widths. Native Windows verification is pending.
+- Preserve the previous source and assets under `old_builds/v2.5.3/`.
+
 ## v2.5.3
 
 Windows test candidate. Follow the [Windows verification checklist](docs/WINDOWS-TEST.md) before treating this build as verified.

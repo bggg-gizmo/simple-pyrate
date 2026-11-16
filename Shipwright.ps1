@@ -16,7 +16,7 @@ $script:PyrateMusicVolume=35
 $script:PyrateEffectsOn=$false
 $script:PyrateEffectsVolume=50
 $script:PyrateWizardComplete=$false
-$script:PyrateWizardLayoutRevision=3
+$script:PyrateWizardLayoutRevision=4
 $script:PyrateShortcut=$false
 $script:PyrateTrackIndex=0
 $script:PyrateMusicPlayer=$null
@@ -277,6 +277,7 @@ function Install-PyrateUserCopy {
         'assets\voyage\port-0.png','assets\voyage\port-1.png','assets\voyage\port-2.png','assets\voyage\port-3.png',
         'README.md','CHANGELOG.md','docs\USER-GUIDE.md','docs\TROUBLESHOOTING.md','docs\DEVELOPMENT.md',
         'docs\WINDOWS-TEST.md','docs\V2.5.2-AUDIT.md','docs\media\pyrate-banner-v2.5.2.jpg','docs\media\edition-v2.5.2.svg',
+        'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg',
         'docs\media\runtime.svg','docs\media\formats.svg','docs\media\at-anchor.jpg','docs\media\port-battle.jpg',
         'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\local_fixture.py'
     )
@@ -327,7 +328,8 @@ function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu)
             $installRoot=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'BGGG\Simple Pyrate'
             $previous=@(
                 (Join-Path $installRoot 'App-2.5.2\Start-Simple-Pyrate.cmd'),
-                (Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd')
+                (Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd'),
+                (Join-Path $installRoot 'App-2.5.3\Start-Simple-Pyrate.cmd')
             )
             $updated=Join-Path (Join-Path $installRoot "App-$script:PyrateVersion") 'Start-Simple-Pyrate.cmd'
             if ($shortcut.TargetPath -notin $previous -or $target -ine $updated) {
@@ -384,30 +386,8 @@ function Set-PyrateWizardPage($State) {
             $null=Add-PyrateWizardText $State.Body 'Welcome to Simple Pyrate' 'Title'
             $null=Add-PyrateWizardText $State.Body 'Let''s set up your ship.'
 
-            # Compose the original artwork here without reusing the live voyage text.
-            $artwork=[Windows.Media.DrawingGroup]::new()
-            $voyageFolder=Join-Path $script:AppRoot 'assets\voyage'
-            foreach ($layer in @(
-                @{ File='sea-and-sky.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) },
-                @{ File='lagoon.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) },
-                @{ File='pyrate-ship.png'; Bounds=[Windows.Rect]::new(504,125,323.7,172.38) },
-                @{ File='fog.png'; Bounds=[Windows.Rect]::new(0,0,1200,390) }
-            )) {
-                $bitmap=[Windows.Media.Imaging.BitmapImage]::new()
-                $bitmap.BeginInit()
-                $bitmap.CacheOption='OnLoad'
-                $bitmap.UriSource=[uri](Join-Path $voyageFolder $layer.File)
-                $bitmap.EndInit()
-                $drawing=[Windows.Media.ImageDrawing]::new()
-                $drawing.ImageSource=$bitmap
-                $drawing.Rect=$layer.Bounds
-                $artwork.Children.Add($drawing)
-            }
-            if ($artwork.CanFreeze) { $artwork.Freeze() }
-            $art=[Windows.Controls.Image]::new()
-            $art.Source=[Windows.Media.DrawingImage]::new($artwork)
-            $art.Height=146; $art.Stretch='UniformToFill'; $art.ClipToBounds=$true
-            $art.IsHitTestVisible=$false
+            $art=[Pyrate.VoyageCanvas]::CreateHarborArtwork((Join-Path $script:AppRoot 'assets\voyage'))
+            $art.Height=126
             $art.Margin=[Windows.Thickness]::new(0,6,0,12)
             $null=$State.Body.Children.Add($art)
 

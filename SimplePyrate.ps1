@@ -885,9 +885,9 @@ if ($SmokeTest) {
     $welcomeRows=@($wizard.Body.Children | ForEach-Object { $_ })
     if ($welcomeRows.Count -ne 5 -or $welcomeRows[1].Text -cne 'Welcome to Simple Pyrate' -or
         $welcomeRows[2].Text -cne 'Let''s set up your ship.' -or
-        $welcomeRows[3] -isnot [Windows.Controls.Image] -or
-        $welcomeRows[3].Source -isnot [Windows.Media.DrawingImage] -or
-        $welcomeRows[3].Source.Drawing.Children.Count -ne 4) {
+        $welcomeRows[3] -isnot [Windows.FrameworkElement] -or
+        $welcomeRows[3].GetType().DeclaringType -ne [Pyrate.VoyageCanvas] -or
+        $welcomeRows[3].IsHitTestVisible) {
         throw 'Shipyard welcome copy or artwork smoke check failed.'
     }
     foreach ($page in 0..3) {
@@ -898,6 +898,27 @@ if ($SmokeTest) {
         foreach ($width in @(340,420,620)) {
             $wizard.Body.Measure([Windows.Size]::new($width,[double]::PositiveInfinity))
             $wizard.Body.Arrange([Windows.Rect]::new(0,0,$width,$wizard.Body.DesiredSize.Height))
+            if ($page -eq 0) {
+                $art=$rows[3]
+                if ($art.ActualWidth -lt 300 -or $art.ActualHeight -ne 126) {
+                    throw "Shipyard harbor artwork is clipped by layout at $width logical pixels."
+                }
+                $image=[Windows.Media.Imaging.RenderTargetBitmap]::new([int]$art.ActualWidth,[int]$art.ActualHeight,96,96,[Windows.Media.PixelFormats]::Pbgra32)
+                $image.Render($art)
+                $pitch=$image.PixelWidth*4
+                $artPixels=[byte[]]::new($pitch*$image.PixelHeight)
+                $image.CopyPixels($artPixels,$pitch,0)
+                $artColors=[Collections.Generic.HashSet[int]]::new()
+                for ($rowY=8; $rowY -lt $image.PixelHeight; $rowY+=8) {
+                    for ($columnX=8; $columnX -lt $image.PixelWidth; $columnX+=8) {
+                        $pixel=$rowY*$pitch+$columnX*4
+                        if ($artPixels[$pixel+3] -eq 0) { continue }
+                        $rgb=([int]$artPixels[$pixel+2] -shl 16) -bor ([int]$artPixels[$pixel+1] -shl 8) -bor [int]$artPixels[$pixel]
+                        $null=$artColors.Add($rgb)
+                    }
+                }
+                if ($artColors.Count -lt 16) { throw "Shipyard harbor artwork did not render at $width logical pixels." }
+            }
             $bottom=0.0
             foreach ($row in $rows) {
                 $offset=[Windows.Media.VisualTreeHelper]::GetOffset($row)
