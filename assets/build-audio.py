@@ -118,9 +118,31 @@ def render_effect(name, seconds, index):
         buf.append(val*min(1,t/.005,max(0,(seconds-t)/.04)))
     pcm(ROOT/(name+".wav"),buf)
 
+def render_ship_bell(name, strikes):
+    """Synthesize a struck bronze ship bell with inharmonic ringing modes."""
+    gap, tail = 16317, 45500
+    modes = ((1.00,.92,2.8), (1.98,.69,3.9), (2.42,.63,4.6),
+             (2.95,.43,5.5), (4.14,.32,8.2), (5.34,.19,10.9), (6.58,.10,13.8))
+    single = []
+    for i in range(tail):
+        t = i / RATE
+        edge = min(1.0, t / .004, (tail - 1 - i) / (RATE * .036))
+        metal = sum(amp * sin(2 * pi * 244 * ratio * t + k * .29) * exp(-damp * t)
+                    for k, (ratio, amp, damp) in enumerate(modes))
+        strike = (.42 * sin(2 * pi * 1720 * t) + .18 * sin(2 * pi * 2890 * t)) * exp(-102 * t)
+        single.append(edge * (.44 * metal + strike))
+    samples = [0.0] * ((strikes - 1) * gap + tail)
+    for strike in range(strikes):
+        strength = 1.0 - (strike % 3) * .035
+        for i, value in enumerate(single):
+            samples[strike * gap + i] += strength * value
+    pcm(ROOT/(name+".wav"), samples)
+
 if __name__ == "__main__":
     with TemporaryDirectory() as tmp:
         for song in SONGS:
             render_song(*song,Path(tmp))
     for i,(name,length) in enumerate(zip(("cannon","embers","boats","cargo","hoist","aboard","ruins"),(1.0,.55,.70,.58,.85,.55,.91))):
         render_effect(name,length,i)
+    for name, strikes in (("ship-bell-start",3), ("ship-bell-port",2), ("ship-bell-finish",5)):
+        render_ship_bell(name, strikes)

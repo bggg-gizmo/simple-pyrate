@@ -11,6 +11,31 @@ function Check($Condition,[string]$Name) {
     "PASS: $Name"
 }
 
+$bell=[Pyrate.ShipBellPlan]::new()
+Check ($bell.BeginJob($false,1,$false)) 'A single job signals one start bell'
+Check (!$bell.EnterPort($false)) 'A single job does not signal a batch port bell'
+Check ($bell.Finish($false,'Complete')) 'A finished single job signals the finish bell'
+Check (!$bell.Finish($false,'Complete')) 'An already finished queue cannot ring twice'
+Check ($bell.BeginJob($true,1,$false)) 'A collection signals its start bell'
+Check ($bell.EnterPort($false) -and $bell.EnterPort($false)) 'Each item of a collection signals its own port bell'
+Check (!$bell.Finish($true,'Complete')) 'An intermediate queued job cannot signal the finish bell'
+Check (!$bell.BeginJob($false,1,$false)) 'The next queued job shares the same start bell'
+Check ($bell.EnterPort($false)) 'Batch ports remain enabled across queued jobs'
+Check ($bell.Finish($false,'Partial')) 'The final partial result still signals that the queue ended'
+Check ($bell.BeginJob($false,2,$false) -and $bell.EnterPort($false)) 'Multiple selected outputs count as a batch'
+Check (!$bell.Finish($false,'Cancelled')) 'A cancelled queue does not ring the finish bell'
+Check ($bell.BeginJob($false,1,$true) -and $bell.EnterPort($false)) 'Multiple pasted links count as a batch'
+Check ($bell.Finish($false,'Complete')) 'A new queue after cancellation can finish normally'
+foreach ($fixture in @(@{Name='ship-bell-port'; Strikes=2},@{Name='ship-bell-start'; Strikes=3},@{Name='ship-bell-finish'; Strikes=5})) {
+    $wave=[IO.File]::ReadAllBytes((Join-Path $root "assets\audio\$($fixture.Name).wav"))
+    $frames=([int]$fixture.Strikes-1)*16317+45500
+    Check (([Text.Encoding]::ASCII.GetString($wave,0,4) -ceq 'RIFF') -and
+        ([Text.Encoding]::ASCII.GetString($wave,8,4) -ceq 'WAVE') -and
+        ([BitConverter]::ToUInt16($wave,20) -eq 1) -and ([BitConverter]::ToUInt16($wave,22) -eq 1) -and
+        ([BitConverter]::ToInt32($wave,24) -eq 22050) -and ([BitConverter]::ToUInt16($wave,34) -eq 16) -and
+        ([BitConverter]::ToInt32($wave,40) -eq $frames*2) -and ($wave.Length -eq 44+$frames*2)) "$($fixture.Name) contains the expected $($fixture.Strikes)-strike PCM recording"
+}
+
 $seen=@{}
 Check ((Get-BwTransferPercent 100 'video' @('video','audio') $seen) -eq 50) 'A downloaded video component alone does not finish split media'
 Check ((Get-BwTransferPercent 50 'audio' @('video','audio') $seen) -eq 75) 'Split audio contributes to one shared transfer percentage'

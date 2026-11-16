@@ -4,7 +4,7 @@
 
 ![Edition v2.5.2](docs/media/edition-v2.5.2.svg) ![Windows PowerShell and WPF](docs/media/runtime.svg) ![MP4, MP3, TXT and SRT](docs/media/formats.svg)
 
-**A moonlit Windows chart room for video, audio and transcripts.**
+**A Windows downloader for video, audio, and transcripts.**
 
 [Changelog](CHANGELOG.md) · [User guide](docs/USER-GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Windows test checklist](docs/WINDOWS-TEST.md) · [Candidate audit](docs/V2.5.2-AUDIT.md)
 
@@ -13,15 +13,19 @@ Developing unique tools for unique individuals · **BGGG / Est. 2020**
 
 ## Download v2.5.2 for Windows
 
-[Simple-Pyrate-v2.5.2-Windows.zip](Simple-Pyrate-v2.5.2-Windows.zip) · [SHA-256 checksum](SHA256SUMS.txt)
+[Download the current Windows-ready source ZIP](https://github.com/bggg-gizmo/simple-pyrate/archive/refs/heads/main.zip) · [Windows test checklist](docs/WINDOWS-TEST.md)
 
-Use the named Windows ZIP. GitHub’s **Code → Download ZIP** is a source snapshot, not the packaged build. For an upgrade, extract v2.5.2 to a fresh folder instead of copying it over an earlier build.
+Use the current source ZIP for the corrected setup screen and new ship bells. It includes the launcher and all runtime assets. No separate compile or build step is needed. Extract it to a fresh folder instead of copying over an earlier build.
+
+[Original v2.5.2 Windows package](Simple-Pyrate-v2.5.2-Windows.zip) · [Original package SHA-256](SHA256SUMS.txt)
+
+The original packaged ZIP is unchanged and does not contain the setup and bell update.
 
 ## Launch on Windows
 
-1. Extract the entire Windows ZIP to a folder you control. Open `SimplePyrate` and keep its scripts and assets together.
+1. Extract the entire current ZIP to a folder you control. Open the extracted folder that contains `Start-Simple-Pyrate.cmd` and keep its scripts and assets together. Do not open the older Windows ZIP inside it.
 2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
-3. The themed **Shipyard** wizard guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
+3. The wizard opens with **Welcome to Simple Pyrate** and **Let’s set up your ship**. It guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
 4. If you chose a per-user install, launch **Simple Pyrate v2.5.2** from the Start Menu next time. For portable mode, keep the extracted folder in place.
 5. Paste one complete link per line. Choose **Single item per link** or **Playlist / full channel**, pick the formats, and click **Queue haul** or press **Ctrl+Enter**.
 
@@ -45,11 +49,11 @@ Use **Stop active** to stop the current haul, **Remove selected** for a queued e
 
 ## The voyage
 
-- **At anchor.** The ship rocks under the moon in the lagoon until a haul starts.
+- **Ready to download.** The ship is at harbor until a haul starts.
 - **Setting sail.** Ghostly titles drift through fog while the ship leaves the cove. The next cut is open water. If yt-dlp reports a wait, the open-water shot shows the remaining time. Simple Pyrate does not impose a blanket three-second delay.
 - **Plundering in progress.** Each resolved video, audio, or transcript item is its own numbered port encounter. Four fictional port silhouettes rotate as the coastline changes. While an encounter is active, the ship fires animated salvos, with muzzle light, flying sparks, and drifting smoke. An item that has no matching subtitles still gets an encounter, and the queue reports that no file was saved.
 - **On to the next port.** Successive items or queued links stay on one voyage. Each battle is separated by an open-water shot. Very fast items can finish before their scenes play, so the cutscenes can briefly catch up after the download queue is done. They never hold up downloading, file saving, or the queue.
-- **Making for harbor.** After the last encounter, the ship sails back into the lagoon. Cancelling the last job skips the pending visual encounters and turns the ship for harbor immediately. Turning off Motion removes the animated transitions and decorative effects.
+- **Making for harbor.** After the last encounter, the ship returns to harbor. Cancelling the last job skips the pending visual encounters and turns the ship for harbor immediately. Turning off Motion removes the animated transitions and decorative effects.
 
 ### Port raid milestones
 
@@ -67,6 +71,8 @@ The raid uses the highest observed transfer percentage for each item. Split vide
 ### Captain’s settings
 
 Choose **Moonlit Watch**, **Corsair Run**, or **All chart-room tracks** to loop four original pirate-themed songs. The ZIP includes the editable MIDI scores and the matching offline MP3 renders, so playback does not depend on a MIDI synthesizer. **Next track**, music volume, and port effects volume are independent. Music and port sound effects are off by default, and the existing **Sea sound** switch still controls ocean ambience separately.
+
+Enable **Settings → Port sound effects** to hear the ship bell. It strikes three times when a haul starts, twice for each port in a batch, and five times when the queue finishes. A cancelled queue does not play the finish bell. Bell cues play in order without delaying transfers or depending on the Motion setting. Music and sea sound are still independent.
 
 The settings also offer **Open Monero donation link** and **Copy XMR address**. Opening the link delegates to your registered Monero wallet. Simple Pyrate never starts or submits a payment.
 
@@ -114,7 +120,7 @@ If Python and FFmpeg are available for development, start the bundled local fixt
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\Engine.Tests.ps1' -YtDlp (Get-Command yt-dlp.exe).Source -Ffmpeg (Get-Command ffmpeg.exe).Source -FixtureUrl 'http://127.0.0.1:8769/index.html' -CollectionUrl 'http://127.0.0.1:8769/collection.html'"
 ```
 
-The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). The packaged v2.5.2 build passed 113 local checks. The [audit](docs/V2.5.2-AUDIT.md) separates that evidence from the native Windows and live-site checks still to run.
+The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). The original packaged v2.5.2 build passed 113 local checks. The setup and bell update adds checks for the welcome layout, strike recordings, and queue behavior. The update still needs the native Windows run in the [checklist](docs/WINDOWS-TEST.md).
 
 ## Previous builds
 

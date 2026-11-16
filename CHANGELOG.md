@@ -2,6 +2,14 @@
 
 ## v2.5.2
 
+### Setup and ship-bell update
+
+- The first-run wizard welcomes users to Simple Pyrate and presents its setup text separately from the artwork. The idle deck now gives a direct download prompt.
+- Added a resonant ship bell with three strikes at departure, two per batch port, and five when the queue finishes. The existing **Port sound effects** setting and volume apply. The queues and transfers do not wait for audio.
+- Added regression checks for the welcome layout, bell recordings, and cue timing. The current repository source ZIP includes this update. The original Windows ZIP and its checksum are unchanged.
+
+### Original package
+
 - Added four original pirate MIDI scores, offline playback in three playlists, a track skip control, and separate music and port-effects volume. The sea ambience and Motion switches still work independently.
 - Added six per-item port raid beats at 30%, 50%, 75%, 80%, 95% and 98%. The harbor catches fire, dinghies carry the crew ashore, crates move aboard, and the ship recovers the crew and dinghies. New synthesized sound effects follow the scenes.
 - MP4 finalization now keeps ready MP4s intact, prefers stream-copy remuxing for compatible inputs, and shows actual FFmpeg progress when conversion is needed. Original media stays on disk on failure or cancellation.

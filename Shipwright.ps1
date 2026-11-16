@@ -21,6 +21,10 @@ $script:PyrateTrackIndex=0
 $script:PyrateMusicPlayer=$null
 $script:PyrateEffectPlayer=$null
 $script:PyrateEffectKey=''
+$script:PyrateBellPlan=[Pyrate.ShipBellPlan]::new()
+$script:PyrateBellAssets=@{ Start='ship-bell-start'; Port='ship-bell-port'; Finish='ship-bell-finish' }
+$script:PyrateBellQueue=[Collections.Generic.Queue[string]]::new()
+$script:PyrateBellPlayer=$null
 $script:PyrateMusicNow=$null
 $script:PyrateSetupExit=$null
 $script:PyrateWizardActive=$null
@@ -98,6 +102,48 @@ function Play-PyrateEffect([int]$Index) {
         $player.Open([uri](Join-Path $script:AppRoot "assets\audio\$name.wav")); $player.Play()
     } catch { Add-BwLog "Could not play port sound: $($_.Exception.Message)" }
 }
+function Stop-PyrateBells {
+    $script:PyrateBellQueue.Clear()
+    $player=$script:PyrateBellPlayer
+    $script:PyrateBellPlayer=$null
+    if ($player) { $player.Close() }
+}
+function Start-PyrateBellPlayback {
+    if ($script:PyrateBellPlayer -or !$script:PyrateBellQueue.Count) { return }
+    if (!$script:PyrateEffectsOn -or $script:PyrateEffectsVolume -le 0 -or $script:SmokeTest) {
+        Stop-PyrateBells
+        return
+    }
+    $name=$script:PyrateBellQueue.Dequeue()
+    try {
+        $player=[Windows.Media.MediaPlayer]::new()
+        $script:PyrateBellPlayer=$player
+        $player.add_MediaEnded({
+            param($sender,$e)
+            if (![object]::ReferenceEquals($sender,$script:PyrateBellPlayer)) { return }
+            $script:PyrateBellPlayer=$null
+            $sender.Close()
+            Start-PyrateBellPlayback
+        })
+        $player.add_MediaFailed({
+            param($sender,$e)
+            if (![object]::ReferenceEquals($sender,$script:PyrateBellPlayer)) { return }
+            Stop-PyrateBells
+            Add-BwLog "Ship bell unavailable: $($e.ErrorException.Message)"
+        })
+        $player.Volume=$script:PyrateEffectsVolume/100.0
+        $player.Open([uri](Join-Path $script:AppRoot "assets\audio\$name.wav"))
+        $player.Play()
+    } catch {
+        Stop-PyrateBells
+        Add-BwLog "Could not play ship bell: $($_.Exception.Message)"
+    }
+}
+function Queue-PyrateBell([ValidateSet('Start','Port','Finish')][string]$Cue) {
+    if (!$script:PyrateEffectsOn -or $script:PyrateEffectsVolume -le 0 -or $script:SmokeTest) { return }
+    $script:PyrateBellQueue.Enqueue($script:PyrateBellAssets[$Cue])
+    Start-PyrateBellPlayback
+}
 function Update-PyrateRaidSound($Frame) {
     if ($Frame.Shot -ne [Pyrate.Shot]::Battle) { return }
     $cue=if ($Frame.RaidStage -eq 0) { [int][Math]::Floor($Frame.RaidSceneAge/2.7) } else { 0 }
@@ -123,6 +169,7 @@ function New-PyrateSettings {
     }
     $musicVol=New-PyrateVolume $body 'Music volume' $script:PyrateMusicVolume
     $effects=New-PyrateDialogCheck $body 'Port sound effects' $script:PyrateEffectsOn
+    $effects.ToolTip='Controls port effects and the ship bell'
     $sfxVol=New-PyrateVolume $body 'Port effects volume' $script:PyrateEffectsVolume
     $soundTools=[Windows.Controls.WrapPanel]::new()
     $null=$body.Children.Add($soundTools)
@@ -146,12 +193,17 @@ function New-PyrateSettings {
     $effects.add_Click({
         param($sender,$e)
         $script:PyrateEffectsOn=[bool]$sender.IsChecked; $sender.Tag.IsEnabled=$script:PyrateEffectsOn
-        if (!$script:PyrateEffectsOn -and $script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Close() }
+        if (!$script:PyrateEffectsOn) {
+            if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Close() }
+            Stop-PyrateBells
+        }
     })
     $sfxVol.add_ValueChanged({
         param($sender,$e)
         $script:PyrateEffectsVolume=[int]$sender.Value
         if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Volume=$sender.Value/100 }
+        if ($sender.Value -le 0) { Stop-PyrateBells }
+        elseif ($script:PyrateBellPlayer) { $script:PyrateBellPlayer.Volume=$sender.Value/100 }
     })
     $next.add_Click({ $script:PyrateTrackIndex++; Set-PyrateMusic $false })
     $test.add_Click({ Play-PyrateEffect 0 })
@@ -231,6 +283,7 @@ function Install-PyrateUserCopy {
         $files+="assets\audio\$track.mid"; $files+="assets\audio\$track.mp3"
     }
     foreach ($cue in $script:PyrateEffects) { $files+="assets\audio\$cue.wav" }
+    foreach ($cue in $script:PyrateBellAssets.Values) { $files+="assets\audio\$cue.wav" }
     foreach ($name in $files) {
         if (![IO.File]::Exists((Join-Path $script:AppRoot $name))) { throw "The extracted app is missing $name. Extract the full ZIP before installing." }
     }

@@ -122,6 +122,8 @@ function Draw-BwVoyage {
 }
 function Complete-BwVoyage([string]$Status,[bool]$MoreQueued) {
     $script:Voyage.Finish($script:VoyageClock.Elapsed.TotalSeconds,$Status,$MoreQueued)
+    if ($script:PyrateBellPlan.Finish($MoreQueued,$Status)) { Queue-PyrateBell 'Finish' }
+    elseif (!$MoreQueued -and $Status -eq 'Cancelled') { Stop-PyrateBells }
     if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
 }
 function Test-BwVoyageContinuing {
@@ -446,6 +448,9 @@ function Start-BwNext {
         $script:Run=[pscustomobject]@{ Worker=$worker; Token=$source; Handle=$worker.BeginInvoke(); Result=$null; Phase=''; ProcessingClock=$null; ProcessingTelemetry='' }
         if (!$script:Voyage.Running -and !$script:Voyage.ReturnPending) { $script:PyrateEffectKey='' }
         $script:Voyage.Start($script:VoyageClock.Elapsed.TotalSeconds)
+        if ($script:PyrateBellPlan.BeginJob(($row.Job.Scope -eq 'collection'),@($row.Job.Modes).Count,(Test-BwVoyageContinuing))) {
+            Queue-PyrateBell 'Start'
+        }
         if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
         Add-BwLog "Haul $($row.Id) started for $($row.Label)."
         Update-BwQueue
@@ -488,6 +493,7 @@ function Read-BwEvents {
                     elseif ($data.Index) { "Item $($data.Index)" } else { '' }
                 $script:Run.ProcessingClock=$null
                 $script:Voyage.EnterPort([string]$data.Mode,[string]$data.Title,[string]$position)
+                if ($script:PyrateBellPlan.EnterPort((Test-BwVoyageContinuing))) { Queue-PyrateBell 'Port' }
                 Set-BwActive 'UNDERWAY' $data.Title $(if ($position) { $position } else { 'Preparing item' }) 'Waiting for transfer'
                 Set-BwMeter $null $true
                 if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
@@ -824,6 +830,7 @@ $script:Deck.add_Closed({
     if ($script:Sound) { $script:Sound.Stop(); $script:Sound.Dispose() }
     if ($script:PyrateMusicPlayer) { $script:PyrateMusicPlayer.Close() }
     if ($script:PyrateEffectPlayer) { $script:PyrateEffectPlayer.Close() }
+    Stop-PyrateBells
     if (!$script:SmokeTest) { Save-BwPrefs }
 })
 $script:StartupStage = 'Starting the Windows interface'
@@ -900,6 +907,9 @@ if ($SmokeTest) {
     }
     foreach ($effect in $script:PyrateEffects) {
         if (![IO.File]::Exists((Join-Path $script:AppRoot "assets\audio\$effect.wav"))) { throw "Missing sound effect: $effect" }
+    }
+    foreach ($bell in $script:PyrateBellAssets.Values) {
+        if (![IO.File]::Exists((Join-Path $script:AppRoot "assets\audio\$bell.wav"))) { throw "Missing ship bell: $bell" }
     }
     $script:Deck.Close()
     Write-Output 'Simple Pyrate v2.5.2 WPF smoke test passed.'

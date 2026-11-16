@@ -4,6 +4,30 @@ using System.Collections.Generic;
 namespace Pyrate {
     public enum Shot { Harbor, Departure, OpenSea, Battle, Return }
 
+    public sealed class ShipBellPlan {
+        private bool active, batch;
+
+        public bool BeginJob(bool collection, int outputs, bool moreQueued) {
+            bool first = !active;
+            if (first) { active = true; batch = false; }
+            batch = batch || collection || outputs > 1 || moreQueued;
+            return first;
+        }
+
+        public bool EnterPort(bool moreQueued) {
+            if (!active) return false;
+            batch = batch || moreQueued;
+            return batch;
+        }
+
+        public bool Finish(bool moreQueued, string status) {
+            if (!active || moreQueued) return false;
+            active = false;
+            batch = false;
+            return !String.Equals(status, "Cancelled", StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
     public sealed class VoyageFrame {
         public Shot Shot { get; private set; }
         public double Age { get; private set; }
