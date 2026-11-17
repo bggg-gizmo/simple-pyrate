@@ -11,6 +11,14 @@
 Developed by **The Background Gremlin Group**  
 Developing unique tools for unique individuals · **BGGG / Est. 2020**
 
+## Walkthrough
+
+See Simple Pyrate queue an MP4 and transcript, sail from port to port, and return to harbor when the haul is complete.
+
+![Simple Pyrate v2.5.7 animated walkthrough showing a video and transcript haul](assets/Simple-Pyrate-v2.5.7-Walkthrough.gif)
+
+[Open the walkthrough GIF](assets/Simple-Pyrate-v2.5.7-Walkthrough.gif)
+
 ## Download v2.5.7 for Windows
 
 **v2.5.7 is accepted by the maintainer.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
