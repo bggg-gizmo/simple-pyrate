@@ -1,8 +1,8 @@
-# Simple Pyrate v2.5.6
+# Simple Pyrate v2.5.7
 
 ![Simple Pyrate voyage artwork](docs/media/pyrate-banner-v2.5.2.jpg)
 
-![Edition v2.5.6](docs/media/edition-v2.5.6.svg) ![Windows PowerShell and WPF](docs/media/runtime.svg) ![MP4, MP3, TXT and SRT](docs/media/formats.svg)
+![Edition v2.5.7](docs/media/edition-v2.5.7.svg) ![Windows PowerShell and WPF](docs/media/runtime.svg) ![MP4, MP3, TXT and SRT](docs/media/formats.svg)
 
 **A Windows downloader for video, audio, and transcripts.**
 
@@ -11,9 +11,9 @@
 Developed by **The Background Gremlin Group**  
 Developing unique tools for unique individuals · **BGGG / Est. 2020**
 
-## Download v2.5.6 for Windows
+## Download v2.5.7 for Windows
 
-**Windows test candidate.** This build restores the v2.5.4 voyage renderer and timing, and plays the included PCM ship effects, bells, and sea ambience directly through the default Windows audio output. Native playback checks are still pending. The current ZIP excludes archived copies while keeping all runtime media.
+**Windows test candidate.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
 
 [Download the current Windows-ready source ZIP](https://github.com/bggg-gizmo/simple-pyrate/archive/refs/heads/main.zip) · [Windows test checklist](docs/WINDOWS-TEST.md)
 
@@ -28,7 +28,7 @@ The original packaged ZIP is unchanged and does not contain the setup and bell u
 1. Extract the entire current ZIP to a folder you control. Open the extracted folder that contains `Start-Simple-Pyrate.cmd` and keep its scripts and assets together. Do not open the older Windows ZIP inside it.
 2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
 3. The wizard opens with **Welcome to Simple Pyrate** and **Let’s set up your ship**. It guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
-4. If you chose a per-user install, launch **Simple Pyrate v2.5.6** from the Start Menu next time. For portable mode, keep the extracted folder in place.
+4. If you chose a per-user install, launch **Simple Pyrate v2.5.7** from the Start Menu next time. For portable mode, keep the extracted folder in place.
 5. Paste one complete link per line. Choose **Single item per link** or **Playlist / full channel**, pick the formats, and click **Queue haul** or press **Ctrl+Enter**.
 
 The app ships as full source with a CMD launcher, not as a compiled EXE. Run `Start-Simple-Pyrate.cmd -Setup` or choose **Settings → First-run setup** to reopen the wizard. It targets 64-bit Windows 10 and 11 (x64 and ARM64). The launcher uses a process-only PowerShell execution-policy override. It does not change Windows’ machine or user execution policy or bypass a system administrator’s Group Policy.
@@ -96,11 +96,11 @@ The language field accepts codes such as `en`, `de`, `pt-BR`, or comma-separated
 - Installs missing tools under `%ProgramFiles%\BGGG\Blackwake\bin`, verifies the downloaded release asset against its published SHA-256 and byte count, then adds the directory to the machine PATH in the Windows registry. App sessions read the updated machine PATH directly. An already-open terminal may need to be reopened.
 - Reuses existing tools on the machine PATH. **Refresh managed tools** updates managed packages and leaves unrelated copies untouched. Simple Pyrate runs its job worker without requesting elevation. Run the app normally and let Windows elevate only Shipyard.
 - Upstream builds come from [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases), [BtbN FFmpeg Builds](https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases) and [Deno](https://github.com/denoland/deno/releases). Existing Deno installations should be at least 2.3. Existing yt-dlp executables should be current.
-- For a portable copy, delete its extracted folder. For a per-user install of the current update, delete `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.5.6` and its shortcuts. The upgrade leaves the previous `App-2.5.2`, `App-2.5.2-setup2`, `App-2.5.3`, `App-2.5.4`, and `App-2.5.5` folders alone. The existing settings path, `%LOCALAPPDATA%\BGGG\Blackwake`, is preserved so an update picks up your preferred save folder and other options. The managed Program Files directory is also reused. To remove its managed tools as well, remove only the existing Blackwake bin entry from **System Properties → Advanced → Environment Variables → System variables → Path** and delete `%ProgramFiles%\BGGG\Blackwake` as an administrator. This does not touch your downloads or tools installed by other apps.
+- For a portable copy, delete its extracted folder. For a per-user install of the current update, delete `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.5.7` and its shortcuts. The upgrade leaves the previous `App-2.5.2`, `App-2.5.2-setup2`, `App-2.5.3`, `App-2.5.4`, `App-2.5.5`, and `App-2.5.6` folders alone. The existing settings path, `%LOCALAPPDATA%\BGGG\Blackwake`, is preserved so an update picks up your preferred save folder and other options. The managed Program Files directory is also reused. To remove its managed tools as well, remove only the existing Blackwake bin entry from **System Properties → Advanced → Environment Variables → System variables → Path** and delete `%ProgramFiles%\BGGG\Blackwake` as an administrator. This does not touch your downloads or tools installed by other apps.
 
 ## Verification
 
-v2.5.6 retains the v2.5.1 System.Xaml startup fix. `-SmokeTest` is synchronous and returns a failure code. `-Diagnose` runs the app in the console. Startup errors point to `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log` when available.
+v2.5.7 retains the v2.5.1 System.Xaml startup fix. `-SmokeTest` is synchronous and returns a failure code. `-Diagnose` runs the app in the console. Startup errors point to `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log` when available.
 
 On Windows, check the native interface and progress control from Command Prompt:
 
@@ -122,12 +122,13 @@ If Python and FFmpeg are available for development, start the bundled local fixt
 powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '.\tests\Engine.Tests.ps1' -YtDlp (Get-Command yt-dlp.exe).Source -Ffmpeg (Get-Command ffmpeg.exe).Source -FixtureUrl 'http://127.0.0.1:8769/index.html' -CollectionUrl 'http://127.0.0.1:8769/collection.html'"
 ```
 
-The existing engine and voyage suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). The original packaged v2.5.2 build passed 113 local checks. The setup and bell update adds checks for the welcome layout, strike recordings, and queue behavior. The v2.5.6 candidate includes a regression for an exited downloader whose descendant keeps an output pipe open. Prior test results are not v2.5.6 results. Follow the [Windows checklist](docs/WINDOWS-TEST.md) for native verification.
+The engine, voyage, and audio suites remain in place, and `Upgrade.Tests.ps1` adds milestone, split-stream, remux, encode, cancellation, and output-preservation checks. For the native Windows 5.1 smoke test, setup wizard, audio playback and UAC checks, follow the [Windows test checklist](docs/WINDOWS-TEST.md). The original packaged v2.5.2 build passed 113 local checks. The setup and bell update adds checks for the welcome layout, strike recordings, and queue behavior. The v2.5.7 candidate includes a regression for an exited downloader whose descendant keeps an output pipe open. Prior test results are not v2.5.7 results. Follow the [Windows checklist](docs/WINDOWS-TEST.md) for native verification.
 
 ## Previous builds
 
-The repository root holds v2.5.6. The archived Windows source, assets, and tests are available separately.
+The repository root holds v2.5.7. The archived Windows source, assets, and tests are available separately.
 
+- [v2.5.6](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.6/) preserves the previous renderer and audio code.
 - [v2.5.5](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.5/) is the previous animation and audio update.
 - [v2.5.4](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.4/) includes the restored Shipyard artwork.
 - [v2.5.3](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.3/) includes the previous launcher, wizard, source, assets, and tests.
@@ -161,7 +162,7 @@ The repository root holds v2.5.6. The archived Windows source, assets, and tests
 | `tests/Engine.Tests.ps1` | Unit checks and optional real download integration tests |
 | `tests/Voyage.Tests.ps1` | Deterministic timeline and playback checks |
 | `tests/Upgrade.Tests.ps1` | Progress, port milestones, conversion and launcher regression checks |
-| `old_builds/` | Archived v2.5, v2.5.1, v2.5.2, v2.5.3 and v2.5.4 builds |
+| `old_builds/` | Archived v2.5 through v2.5.6 builds |
 | `tests/local_fixture.py` | Local media and caption fixtures for testing |
 
 [bggg] The Background Gremlin Group • Est. 2020

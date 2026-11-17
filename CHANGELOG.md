@@ -1,5 +1,11 @@
 # Changelog
 
+## v2.5.7
+
+- Keep one forward-facing ship position across the sailing and port shots. Slide the departing coast left and approach the next port from the right. The return still plays only after the final port or a cancellation.
+- Mix the existing WAV effects, bells and ambience in one Windows output stream, including when the sea loop is active. Run device work off the UI thread, preserve the individual audio controls, and report failures per recording.
+- Play port cues even with Motion off, and add a two-port camera regression test and a concurrent audio test. Keep v2.5.6 in `old_builds/v2.5.6/`. No new audio libraries or assets.
+
 ## v2.5.6
 
 - Restore the v2.5.4 deck animation, original ship staging and raid visuals, and the previous frame cadence. Remove the extra scene compositing from v2.5.5.

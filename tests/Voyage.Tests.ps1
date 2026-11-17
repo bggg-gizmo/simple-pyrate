@@ -77,4 +77,35 @@ $null=Step $sea 62
 Require ((Step $sea 63).Shot -eq 'OpenSea') 'A resolved title alone does not launch cannon fire before transfer activity'
 $sea.SignalActivity()
 Require ((Step $sea 63.1).Shot -eq 'Battle') 'Progress opens the battle while the item is still active'
+$handoff=[Pyrate.VoyageTimeline]::new()
+$handoff.Start(0)
+$handoff.EnterPort('MP4','First coastal port','')
+$handoff.ResolvePort($true)
+$handoff.EnterPort('MP4','Next coastal port','')
+$handoff.ResolvePort($true)
+$handoff.Finish(.1,'Complete',$false)
+$record=@(for($t=0.0;$t -lt 23.0;$t+=.033) { Step $handoff $t })
+$cross=@($record | Where-Object { $_.Shot -eq 'OpenSea' -and $_.DepartingPort -eq 1 })
+Require ($cross.Count -gt 3 -and $cross[0].PassingCoastX -eq 0 -and $cross[-1].PassingCoastX -lt -1200) 'The first port slides completely off the left edge before the next port'
+Require ((@($cross | Where-Object DepartingRaidStage -ne 6)).Count -eq 0) 'A departing port keeps its final damage instead of reverting to an intact port'
+$approach=@($record | Where-Object { $_.Shot -eq 'Battle' -and $_.Port -eq 2 -and $_.Age -lt .7 })
+Require ($approach.Count -gt 3 -and $approach[0].PassingCoastX -eq 480 -and $approach[-1].PassingCoastX -eq 0) 'The next coastline arrives from the right and settles naturally'
+foreach ($leg in @($cross,$approach)) {
+    for ($i=1;$i -lt $leg.Count;$i++) {
+        if ($leg[$i].PassingCoastX -gt $leg[$i-1].PassingCoastX) { throw 'The coastal camera reversed direction.' }
+    }
+}
+Require $true 'Both coastlines move left in the same forward sailing direction'
+Require ((@($record | Where-Object Shot -eq 'Return'))[0].Port -eq 2) 'Only the final encounter sends the ship home'
+$paused=[Pyrate.VoyageTimeline]::new()
+$paused.Start(0)
+$paused.EnterPort('MP4','Delayed coastal port','')
+$paused.SignalActivity()
+$null=Step $paused 1.66
+Require ((Step $paused 2.27).Shot -eq 'Battle') 'A transfer enters its port before a source wait'
+$paused.BeginWait(2.9,2,'Source hold')
+$during=Step $paused 3.05
+Require ($during.Shot -eq 'OpenSea' -and $during.DepartingPort -eq 1 -and $during.PassingCoastX -lt 0) 'Source waits also exit a port in the forward direction'
+$paused.SignalActivity()
+Require ((Step $paused 3.4).Port -eq 1 -and $paused.PortsObserved -eq 1) 'A source hold never invents another numbered port'
 Write-Output "$script:Checks voyage checks passed."

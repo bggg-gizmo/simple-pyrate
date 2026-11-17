@@ -138,11 +138,20 @@ function Start-PyrateBellPlayback {
 }
 function Update-PyrateAudio {
     foreach ($voice in $script:PyrateEffectPlayers.ToArray()) {
-        if ($voice.Ended) { Close-PyrateEffect $voice }
+        if ($voice.Ended) {
+            if ($voice.Failure) { Add-BwLog "Port effect '$($voice.Recording)' could not play: $($voice.Failure)" }
+            Close-PyrateEffect $voice
+        }
+    }
+    if ($script:Sound -and $script:Sound.Ended) {
+        if ($script:Sound.Failure) { Add-BwLog "Sea ambience could not play: $($script:Sound.Failure)" }
+        $script:Sound.Dispose()
+        $script:Sound=$null
     }
     $bell=$script:PyrateBellPlayer
     if ($bell -and $bell.Ended) {
         $script:PyrateBellPlayer=$null
+        if ($bell.Failure) { Add-BwLog "Ship bell '$($bell.Recording)' could not play: $($bell.Failure)" }
         try { $bell.Dispose() } catch { Add-BwLog "Ship bell cleanup failed: $($_.Exception.Message)" }
         Start-PyrateBellPlayback
     }
@@ -152,9 +161,9 @@ function Queue-PyrateBell([ValidateSet('Start','Port','Finish')][string]$Cue) {
     $script:PyrateBellQueue.Enqueue($script:PyrateBellAssets[$Cue])
     Start-PyrateBellPlayback
 }
-function Update-PyrateRaidSound($Frame) {
+function Update-PyrateRaidSound($Frame,[bool]$Animate=$true) {
     if ($Frame.Shot -ne [Pyrate.Shot]::Battle) { return }
-    if ($Frame.RaidStage -lt 2 -and $Frame.RaidSceneAge -ge .13) {
+    if ($Animate -and $Frame.RaidStage -lt 2 -and $Frame.RaidSceneAge -ge .13) {
         $cue=[int][Math]::Floor(($Frame.RaidSceneAge-.13)/2.7)
         $cannon="$($Frame.Port)/$cue"
         if ($cannon -ne $script:PyrateCannonKey) {
@@ -294,9 +303,9 @@ function Install-PyrateUserCopy {
         'assets\voyage\port-0.png','assets\voyage\port-1.png','assets\voyage\port-2.png','assets\voyage\port-3.png',
         'README.md','CHANGELOG.md','docs\USER-GUIDE.md','docs\TROUBLESHOOTING.md','docs\DEVELOPMENT.md',
         'docs\WINDOWS-TEST.md','docs\V2.5.2-AUDIT.md','docs\media\pyrate-banner-v2.5.2.jpg','docs\media\edition-v2.5.2.svg',
-        'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg','docs\media\edition-v2.5.5.svg','docs\media\edition-v2.5.6.svg',
+        'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg','docs\media\edition-v2.5.5.svg','docs\media\edition-v2.5.6.svg','docs\media\edition-v2.5.7.svg',
         'docs\media\runtime.svg','docs\media\formats.svg','docs\media\at-anchor.jpg','docs\media\port-battle.jpg',
-        'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\local_fixture.py'
+        'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\ShipAudio.Tests.ps1','tests\local_fixture.py'
     )
     foreach ($track in $script:PyrateMusicNames.Keys) {
         $files+="assets\audio\$track.mid"; $files+="assets\audio\$track.mp3"
@@ -348,7 +357,8 @@ function New-PyrateShortcut([string]$AppPath=$script:AppRoot,[switch]$StartMenu)
                 (Join-Path $installRoot 'App-2.5.2-setup2\Start-Simple-Pyrate.cmd'),
                 (Join-Path $installRoot 'App-2.5.3\Start-Simple-Pyrate.cmd'),
                 (Join-Path $installRoot 'App-2.5.4\Start-Simple-Pyrate.cmd'),
-                (Join-Path $installRoot 'App-2.5.5\Start-Simple-Pyrate.cmd')
+                (Join-Path $installRoot 'App-2.5.5\Start-Simple-Pyrate.cmd'),
+                (Join-Path $installRoot 'App-2.5.6\Start-Simple-Pyrate.cmd')
             )
             $updated=Join-Path (Join-Path $installRoot "App-$script:PyrateVersion") 'Start-Simple-Pyrate.cmd'
             if ($shortcut.TargetPath -notin $previous -or $target -ine $updated) {

@@ -95,7 +95,7 @@ namespace Pyrate {
             if (frame==null) { dc.DrawRectangle(ink,null,viewport); dc.Pop(); return; }
             DrawScenery(dc,viewport);
             DrawHud(dc,w,h);
-            if (motion && (frame.Shot==Shot.OpenSea || frame.Shot==Shot.Battle || frame.Shot==Shot.Return) && frame.Age<.28) {
+            if (motion && (frame.Shot==Shot.Return || (frame.Shot==Shot.OpenSea && frame.DepartingPort==0)) && frame.Age<.28) {
                 double opacity=.6*(1-Ease(frame.Age/.28));
                 dc.PushOpacity(opacity); dc.DrawRectangle(ink,null,viewport); dc.Pop();
             }
@@ -143,9 +143,8 @@ namespace Pyrate {
             double p=motion ? Ease(frame.Progress) : 1;
             double now=motion ? time : 0;
             double sway=motion ? Math.Sin(now*1.44)*2.6 : 0;
-            if (motion && frame.Shot==Shot.OpenSea) sway*=1.6;
             double shipX, shipY, zoom;
-            double coast=0, threat=0;
+            double coast=0;
             bool reverse=false;
             switch(frame.Shot) {
                 case Shot.Departure:
@@ -153,13 +152,8 @@ namespace Pyrate {
                     shipX=Lerp(504,1220,p); shipY=Lerp(123,150,p); zoom=Lerp(.78,.55,p);
                     break;
                 case Shot.OpenSea:
-                    shipX=510+(motion ? Math.Sin(now*.8)*25 : 0);
-                    shipY=136; zoom=.72;
-                    break;
                 case Shot.Battle:
-                    threat=1;
-                    shipX=motion ? Lerp(382,516,Ease(frame.Age/.57)) : 516;
-                    shipY=159; zoom=.78;
+                    shipX=VoyageFrame.SailingShipX; shipY=VoyageFrame.SailingShipY; zoom=VoyageFrame.SailingShipZoom;
                     break;
                 case Shot.Return:
                     coast=1; reverse=true;
@@ -173,9 +167,20 @@ namespace Pyrate {
             Image(dc,sky,0,0,1200,390,1);
             Image(dc,lagoon,0,0,1200,390,coast);
             int variant=(Math.Max(1,frame.Port)-1)%ports.Length;
-            Image(dc,ports[variant],0,0,1200,390,threat);
-            if (frame.Shot==Shot.Battle) DrawPortDamage(dc,variant,now);
-            DrawWater(dc,now,frame.Shot==Shot.OpenSea ? 1.35 : 1);
+            if (frame.Shot==Shot.Battle) {
+                double shift=motion ? frame.PassingCoastX : 0;
+                dc.PushTransform(new TranslateTransform(shift,0));
+                Image(dc,ports[variant],0,0,1200,390,1);
+                DrawPortDamage(dc,variant,now);
+                dc.Pop();
+            } else if (motion && frame.Shot==Shot.OpenSea && frame.DepartingPort>0 && frame.Progress<1) {
+                int leaving=(frame.DepartingPort-1)%ports.Length;
+                dc.PushTransform(new TranslateTransform(frame.PassingCoastX,0));
+                Image(dc,ports[leaving],0,0,1200,390,1);
+                DrawPortDamage(dc,leaving,now,frame.DepartingRaidStage);
+                dc.Pop();
+            }
+            DrawWater(dc,now,1);
             double drift=now==0 ? 0 : Math.Sin(now*.39)*47;
             Image(dc,fog,drift,-5,1200,390,.82);
             double deck=shipY+221*zoom;
@@ -192,7 +197,7 @@ namespace Pyrate {
             }
             Overlay(dc,textShade,center,deck-4,172*zoom,14,.52);
 
-            double burst=motion && frame.Shot==Shot.Battle && frame.Age>.13 ? (frame.Age-.13)%2.7 : -1;
+            double burst=motion && frame.Shot==Shot.Battle && frame.RaidSceneAge>.13 ? (frame.RaidSceneAge-.13)%2.7 : -1;
             double recoil=frame.RaidStage<2 && burst>=0 && burst<.22 ? -(1-burst/.22)*8 : 0;
             double angle=motion ? Math.Sin(now*1.13)*1.7 : 0;
             dc.PushTransform(new RotateTransform(angle,center,deck-16));
@@ -220,7 +225,7 @@ namespace Pyrate {
             }
         }
         private void DrawVolley(DrawingContext dc,double t,double x,double y,int variant) {
-            double targetX=975+variant*28, targetY=254-variant*6;
+            double targetX=975+variant*28+frame.PassingCoastX, targetY=254-variant*6;
             if (t<.40) {
                 double flick=(1-t/.40);
                 Overlay(dc,gunGlow,x+7,y,49+26*t,32+16*t,flick*.57);

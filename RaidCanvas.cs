@@ -25,7 +25,9 @@ namespace Pyrate {
             dc.DrawGeometry(fill,pen,geo);
         }
         private void DrawPortDamage(DrawingContext dc,int port,double now) {
-            int stage=frame.RaidStage;
+            DrawPortDamage(dc,port,now,frame.RaidStage);
+        }
+        private void DrawPortDamage(DrawingContext dc,int port,double now,int stage) {
             if(stage<1) return;
             int fireCount=stage>=6 ? 7 : Math.Min(6,stage+1);
             for(int i=0;i<fireCount;i++) {

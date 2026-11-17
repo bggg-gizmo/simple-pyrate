@@ -40,13 +40,29 @@ namespace Pyrate {
         public double RaidBeat { get; private set; }
         public string RaidAction { get { return VoyageTimeline.MilestoneAction(RaidStage); } }
         public int Port { get; private set; }
+        public int DepartingPort { get; private set; }
+        public int DepartingRaidStage { get; private set; }
+        // The camera follows the same forward-facing ship throughout open water and battle.
+        public double PassingCoastX {
+            get {
+                if (Shot==Shot.OpenSea && DepartingPort>0) return -1260*Ease(Progress);
+                if (Shot==Shot.Battle) return 480*(1-Ease(Age/.57));
+                return 0;
+            }
+        }
+        public const double SailingShipX=516, SailingShipY=159, SailingShipZoom=.78;
+        private static double Ease(double p) {
+            p=Math.Max(0,Math.Min(1,p));
+            return p*p*(3-2*p);
+        }
         public string Headline { get; private set; }
         public string Detail { get; private set; }
         public string Mode { get; private set; }
         public double Progress { get { return Duration <= 0 ? 0 : Math.Max(0, Math.Min(1, Age / Duration)); } }
 
-        internal VoyageFrame(Shot shot, double age, double duration, int port, string headline, string detail, string mode, double waitRemaining, int raidStage, double raidAge, double raidSceneAge, double raidBeat) {
+        internal VoyageFrame(Shot shot, double age, double duration, int port, string headline, string detail, string mode, double waitRemaining, int raidStage, double raidAge, double raidSceneAge, double raidBeat, int departingPort, int departingRaidStage) {
             Shot=shot; Age=age; Duration=duration; Port=port; Headline=headline; Detail=detail; Mode=mode; WaitRemaining=waitRemaining; RaidStage=raidStage; RaidAge=raidAge; RaidSceneAge=raidSceneAge; RaidBeat=raidBeat;
+            DepartingPort=departingPort; DepartingRaidStage=departingRaidStage;
         }
     }
 
@@ -69,7 +85,7 @@ namespace Pyrate {
         private bool running;
         private bool hasReturned;
         private int serial;
-        private int displayPort;
+        private int displayPort, departingPort, departingRaidStage;
         private string displayMode;
         private string displayDetail;
 
@@ -116,7 +132,7 @@ namespace Pyrate {
             bool reuseReturn = shot == Shot.Return;
             if (!continueAtSea) {
                 ports.Clear();
-                serial=0; displayPort=0; current=null; reported=null;
+                serial=0; displayPort=0; departingPort=0; departingRaidStage=0; current=null; reported=null;
                 displayMode=""; displayDetail="";
             }
             running=true; hasReturned=false; result=""; holdUntil=0; waitDetail=null;
@@ -157,7 +173,7 @@ namespace Pyrate {
             double until=now+Math.Min(seconds,3600);
             SetHold(until, detail);
             if (reported != null && !reported.Resolved) reported.WaitUntil=until;
-            if (current != null && current == reported && shot == Shot.Battle) Cut(Shot.OpenSea,now,0.35);
+            if (current != null && current == reported && shot == Shot.Battle) LeavePort(now,.35);
         }
 
         private void SetHold(double until, string detail) {
@@ -174,6 +190,12 @@ namespace Pyrate {
                 ports.Clear(); current=null; reported=null;
                 Cut(Shot.Return, now, 1.9);
             }
+        }
+
+        private void LeavePort(double now,double length) {
+            departingPort=current.Ordinal;
+            departingRaidStage=current.VisibleStage;
+            Cut(Shot.OpenSea,now,length);
         }
 
         private void Cut(Shot next, double now, double length) {
@@ -208,6 +230,7 @@ namespace Pyrate {
                         if (!current.Presented) {
                             current.Presented=true; current.RaidSince=now; current.BattleSince=now;
                         }
+                        departingPort=0; departingRaidStage=0;
                         Cut(Shot.Battle,now,BattleLength(motion));
                         return true;
                     }
@@ -220,8 +243,9 @@ namespace Pyrate {
                     if ((!current.Resolved && now < current.WaitUntil) ||
                         (current.Resolved && (!motion || (age >= duration && current.VisibleStage==current.TargetStage &&
                           (current.TargetStage==0 || now-current.RaidSince>=finalHold))))) {
-                        if (current.Resolved) current=null;
-                        Cut(Shot.OpenSea,now,(ports.Count > 0 || running || current != null) ? Crossing(motion) : 0);
+                        bool resolved=current.Resolved;
+                        LeavePort(now,(ports.Count > 0 || running || !resolved) ? Crossing(motion) : 0);
+                        if (resolved) current=null;
                         return true;
                     }
                     return false;
@@ -276,7 +300,7 @@ namespace Pyrate {
             bool inRaid=shot==Shot.Battle && current!=null;
             return new VoyageFrame(shot,age,duration,port,headline,detail,mode,waiting,
                 inRaid ? current.VisibleStage : 0, inRaid ? Math.Max(0,now-current.RaidSince) : 0,
-                inRaid ? Math.Max(0,now-current.BattleSince) : 0, BeatLength());
+                inRaid ? Math.Max(0,now-current.BattleSince) : 0, BeatLength(), departingPort, departingRaidStage);
         }
     }
 }

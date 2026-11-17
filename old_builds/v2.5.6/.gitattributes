@@ -1,0 +1,14 @@
+# Preserve the shipped Windows script bytes, including CRLF and the PowerShell UTF-8 BOM.
+*.ps1 -text
+*.cmd -text
+
+*.png binary
+*.jpg binary
+*.wav binary
+*.mid binary
+*.mp3 binary
+*.zip binary
+
+# Keep historical builds accessible in Git without bundling them into current source ZIPs.
+/old_builds export-ignore
+/old_builds/** export-ignore

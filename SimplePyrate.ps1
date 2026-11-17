@@ -111,7 +111,7 @@ function Draw-BwVoyage {
     $motion=[bool]$script:Ui.Motion.IsChecked
     $shot=$script:Voyage.Tick($now,$motion)
     $script:VoyageArt.Present($shot,$now,$motion)
-    Update-PyrateRaidSound $shot
+    Update-PyrateRaidSound $shot $motion
     $line=$shot.Headline
     if ($shot.Shot -eq [Pyrate.Shot]::Battle) { $line+=". Port $($shot.Port). $($shot.Mode). $($shot.Detail). $($shot.RaidAction)" }
     if ($line -cne $script:LastVoyageLine) {
@@ -505,11 +505,15 @@ function Read-BwEvents {
                 if ($script:PyrateBellPlan.EnterPort((Test-BwVoyageContinuing))) { Queue-PyrateBell 'Port' }
                 Set-BwActive 'UNDERWAY' $data.Title $(if ($position) { $position } else { 'Preparing item' }) 'Waiting for transfer'
                 Set-BwMeter $null $true
-                if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
+                if (!$script:Ui.Motion.IsChecked) { Play-PyrateEffect 0; Draw-BwVoyage }
             }
             'port-done' {
                 if (!$stopping) {
                     $script:Run.ProcessingClock=$null
+                    if ($data.Saved -and !$script:Ui.Motion.IsChecked) {
+                        $script:Voyage.ReportProgress(100)
+                        Draw-BwVoyage
+                    }
                     $script:Voyage.ResolvePort([bool]$data.Saved)
                     $script:Ui.ActiveStatus.Text=if ($data.Saved) { 'SAVED' } else { 'FINISHED' }
                     $script:Ui.ActiveDetail.Text=if ($data.Saved) { 'Item saved' } else { 'No output saved for this item' }
@@ -561,7 +565,10 @@ function Read-BwEvents {
                 if ($stopping) { break }
                 $script:Run.ProcessingClock=$null
                 $script:Voyage.SignalActivity()
-                if ($null -ne $data.Percent) { $script:Voyage.ReportProgress([double]$data.Percent) }
+                if ($null -ne $data.Percent) {
+                    $script:Voyage.ReportProgress([double]$data.Percent)
+                    if (!$script:Ui.Motion.IsChecked) { Draw-BwVoyage }
+                }
                 if ($data.Title) { $script:Ui.ActiveTitle.Text=$data.Title }
                 $script:Ui.ActiveStatus.Text='UNDERWAY'
                 $detail=if ($data.Mode -eq 'Captions') { 'Downloading captions' } else { "Downloading $($data.Mode)" }
