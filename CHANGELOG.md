@@ -2,6 +2,7 @@
 
 ## v2.5.7
 
+- Accepted by the maintainer after testing. The reported silence was traced to the saved Port sound effects setting being off, not to missing recordings. New profiles default to on. Upgrades retain the saved choice.
 - Keep one forward-facing ship position across the sailing and port shots. Slide the departing coast left and approach the next port from the right. The return still plays only after the final port or a cancellation.
 - Mix the existing WAV effects, bells and ambience in one Windows output stream, including when the sea loop is active. Run device work off the UI thread, preserve the individual audio controls, and report failures per recording.
 - Play port cues even with Motion off, and add a two-port camera regression test and a concurrent audio test. Keep v2.5.6 in `old_builds/v2.5.6/`. No new audio libraries or assets.

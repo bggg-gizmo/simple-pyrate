@@ -13,9 +13,11 @@ Developing unique tools for unique individuals · **BGGG / Est. 2020**
 
 ## Download v2.5.7 for Windows
 
-**Windows test candidate.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
+**v2.5.7 is accepted by the maintainer.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
 
 [Download the current Windows-ready source ZIP](https://github.com/bggg-gizmo/simple-pyrate/archive/refs/heads/main.zip) · [Windows test checklist](docs/WINDOWS-TEST.md)
+
+**Sound defaults.** Port effects and ship bells are on for new profiles. If you upgraded from a build that saved them off, open **Settings → Port sound effects** and enable them once. Sea ambience has its own switch, so hearing the sea doesn’t mean port effects are on.
 
 The current source ZIP includes the versioned launcher, corrected first-run setup, ship bells, and all runtime assets. No separate compile or build step is needed. Extract it to a fresh folder instead of copying over an earlier build.
 
