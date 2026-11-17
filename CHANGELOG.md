@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.5.6
+
+- Restore the v2.5.4 deck animation, original ship staging and raid visuals, and the previous frame cadence. Remove the extra scene compositing from v2.5.5.
+- Play the existing WAV port effects, ship bells, and sea loop through Windows PCM audio. Preserve the existing playlists, switches, volume controls, and recordings. Report device errors in **Ship’s log**.
+- Exclude historical builds from the current source ZIP while keeping them in the repository. Preserve v2.5.5 under `old_builds/v2.5.5/`.
+- Add a startup smoke check for the format of every bundled WAV. Native listening and rendering checks are pending.
+
 ## v2.5.5
 
 - Synchronize visual updates with WPF rendering and dissolve between consecutive voyage shots. Keep the active battle title readable through longer transfers.

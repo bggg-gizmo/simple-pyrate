@@ -76,8 +76,8 @@ function Set-DarkChrome($Window) {
     } catch { }
 }
 $script:StartupStage = 'Compiling the voyage renderer'
-if (!('Pyrate.VoyageCanvas' -as [type])) {
-    Add-Type -Path @((Join-Path $PSScriptRoot 'VoyageTimeline.cs'),(Join-Path $PSScriptRoot 'VoyageCanvas.cs'),(Join-Path $PSScriptRoot 'RaidCanvas.cs')) -ReferencedAssemblies @(
+if (!('Pyrate.PcmVoice' -as [type])) {
+    Add-Type -Path @((Join-Path $PSScriptRoot 'VoyageTimeline.cs'),(Join-Path $PSScriptRoot 'VoyageCanvas.cs'),(Join-Path $PSScriptRoot 'RaidCanvas.cs'),(Join-Path $PSScriptRoot 'ShipAudio.cs')) -ReferencedAssemblies @(
         [Windows.FrameworkElement].Assembly.Location, [Windows.Media.DrawingContext].Assembly.Location,
         [Windows.DependencyObject].Assembly.Location, [Windows.Automation.AutomationProperties].Assembly.Location,
         [Uri].Assembly.Location,
@@ -324,13 +324,13 @@ function Set-BwSound {
     try {
         if ($script:Ui.SeaSound.IsChecked) {
             if (!$script:Sound) {
-                Add-Type -AssemblyName System
-                $script:Sound = [Media.SoundPlayer]::new((Join-Path $script:AppRoot 'assets\Night-Sea.wav'))
-                $script:Sound.Load()
+                $script:Sound=[Pyrate.PcmVoice]::new((Join-Path $script:AppRoot 'assets\Night-Sea.wav'),1.0,$true)
             }
-            $script:Sound.PlayLooping()
-        } elseif ($script:Sound) { $script:Sound.Stop() }
-    } catch { Add-BwLog "Sea ambience is unavailable: $($_.Exception.Message)"; $script:Ui.SeaSound.IsChecked=$false }
+        } elseif ($script:Sound) {
+            $script:Sound.Dispose()
+            $script:Sound=$null
+        }
+    } catch { Add-BwLog "Sea ambience is unavailable: $($_.Exception.Message)" }
 }
 function Set-BwMeter($Value,[bool]$Active) {
     $script:Meter=$Value; $script:MeterRun=$Active
@@ -783,21 +783,17 @@ $script:Deck.add_PreviewKeyDown({
     param($sender,$e)
     if ($e.Key -eq 'Enter' -and ([Windows.Input.Keyboard]::Modifiers -band [Windows.Input.ModifierKeys]::Control)) { $e.Handled=$true; Submit-BwQueue }
 })
-$script:VoyageRenderTime=$null
-$script:VoyageRendering=$false
-$script:VoyageRenderHandler=[EventHandler]{
-    param($sender,$e)
+$script:VoyageTimer=[Windows.Threading.DispatcherTimer]::new([Windows.Threading.DispatcherPriority]::Background)
+$script:VoyageTimer.Interval=[TimeSpan]::FromMilliseconds(33)
+$script:VoyageTimer.add_Tick({
     if ($script:Deck.IsVisible -and $script:Deck.WindowState -ne 'Minimized' -and
-        ($script:Ui.Motion.IsChecked -or $script:Voyage.NeedsClock) -and
-        $e.RenderingTime -ne $script:VoyageRenderTime) {
-        $script:VoyageRenderTime=$e.RenderingTime
+        ($script:Ui.Motion.IsChecked -or $script:Voyage.NeedsClock)) {
         try { Draw-BwVoyage } catch {
-            [Windows.Media.CompositionTarget]::remove_Rendering($script:VoyageRenderHandler)
-            $script:VoyageRendering=$false
+            $script:VoyageTimer.Stop()
             Add-BwLog "Voyage playback stopped: $($_.Exception.Message)"
         }
     }
-}
+})
 $script:Timer=[Windows.Threading.DispatcherTimer]::new()
 $script:Timer.Interval=[TimeSpan]::FromMilliseconds(110)
 $script:Timer.add_Tick({
@@ -811,6 +807,7 @@ $script:Timer.add_Tick({
             else { $script:Hold=!$ready; Show-BwError 'Setup did not finish successfully. Open Shipyard to retry.'; Add-BwLog "Shipyard setup exited with code $exitResult. See setup-error.log in $script:ProfileDir if available." }
         }
         Read-BwEvents
+        Update-PyrateAudio
         if ($script:Closing -and !$script:Run) { $script:Deck.Close(); return }
         Start-BwNext
     } catch { Add-BwLog "Deck error: $($_.Exception.Message)" }
@@ -821,8 +818,7 @@ $script:Deck.add_Loaded({
     $ready=Update-BwTools
     Add-BwLog "Simple Pyrate v$script:PyrateVersion is ready for links."
     $script:Timer.Start()
-    [Windows.Media.CompositionTarget]::add_Rendering($script:VoyageRenderHandler)
-    $script:VoyageRendering=$true
+    $script:VoyageTimer.Start()
     if (!$ready) { $script:Hold=$true }
     if ($script:SetupWizard -or !$script:PyrateWizardComplete -or !$ready) { Show-PyrateWizard }
 })
@@ -840,11 +836,11 @@ $script:Deck.add_Closing({
 })
 $script:Deck.add_Closed({
     $script:Timer.Stop()
-    if ($script:VoyageRendering) {
-        [Windows.Media.CompositionTarget]::remove_Rendering($script:VoyageRenderHandler)
-        $script:VoyageRendering=$false
+    $script:VoyageTimer.Stop()
+    if ($script:Sound) {
+        try { $script:Sound.Dispose() } catch { Add-BwLog "Sea audio cleanup failed: $($_.Exception.Message)" }
+        $script:Sound=$null
     }
-    if ($script:Sound) { $script:Sound.Stop(); $script:Sound.Dispose() }
     if ($script:PyrateMusicPlayer) { $script:PyrateMusicPlayer.Close() }
     Stop-PyrateEffects
     Stop-PyrateBells
@@ -960,11 +956,12 @@ if ($SmokeTest) {
         }
     }
     foreach ($effect in $script:PyrateEffects) {
-        if (![IO.File]::Exists((Join-Path $script:AppRoot "assets\audio\$effect.wav"))) { throw "Missing sound effect: $effect" }
+        $null=[Pyrate.PcmVoice]::CheckRecording((Join-Path $script:AppRoot "assets\audio\$effect.wav"))
     }
     foreach ($bell in $script:PyrateBellAssets.Values) {
-        if (![IO.File]::Exists((Join-Path $script:AppRoot "assets\audio\$bell.wav"))) { throw "Missing ship bell: $bell" }
+        $null=[Pyrate.PcmVoice]::CheckRecording((Join-Path $script:AppRoot "assets\audio\$bell.wav"))
     }
+    $null=[Pyrate.PcmVoice]::CheckRecording((Join-Path $script:AppRoot 'assets\Night-Sea.wav'))
     $script:Deck.Close()
     Write-Output "Simple Pyrate v$script:PyrateVersion WPF smoke test passed."
     Write-Output "Verified first-run wizard layout revision $script:PyrateWizardLayoutRevision."

@@ -77,37 +77,4 @@ $null=Step $sea 62
 Require ((Step $sea 63).Shot -eq 'OpenSea') 'A resolved title alone does not launch cannon fire before transfer activity'
 $sea.SignalActivity()
 Require ((Step $sea 63.1).Shot -eq 'Battle') 'Progress opens the battle while the item is still active'
-$active=[Pyrate.VoyageTimeline]::new()
-$active.Start(0)
-$active.EnterPort('MP4','First animated port','')
-$active.ReportProgress(98)
-$null=Step $active 1.66
-$first=Step $active 2.27
-Require ($first.Shot -eq 'Battle' -and $first.RaidStage -eq 0) 'The opening cannon beat renders before a burst of queued milestones'
-foreach ($i in 1..12) {
-    $active.EnterPort('MP4',"Queued port $i",'')
-    $active.ResolvePort($true)
-}
-$same=Step $active 2.64
-Require ($same.RaidStage -eq 0 -and $same.RaidBeat -eq $first.RaidBeat) 'Newly queued ports cannot speed up an animation already in progress'
-$next=Step $active 3.25
-Require ($next.RaidStage -eq 1 -and $next.RaidBeat -lt $first.RaidBeat -and $next.RaidBeat -ge .58) 'A new crowded-queue beat may start sooner without snapping the current one'
-
-$poseFields=@('BoatPresence','BoatTravel','BoatLift','CrewShore','CrewAboard','CargoPresence','CargoStowed','CargoLift','OarEffort','WalkEffort')
-foreach ($stage in 1..5) {
-    $end=[Pyrate.RaidMotion]::Sample($stage,1)
-    $start=[Pyrate.RaidMotion]::Sample($stage+1,0)
-    $jumps=@($poseFields | Where-Object { [Math]::Abs($end.$_-$start.$_) -gt .00001 })
-    Require ($jumps.Count -eq 0) "Raid phases $stage and $($stage+1) meet at the same visual pose"
-}
-$rowing=[Pyrate.RaidMotion]::Sample(2,.31)
-Require ($rowing.BoatTravel -gt 0 -and $rowing.BoatTravel -lt 1 -and $rowing.CrewShore -eq 0 -and $rowing.OarEffort -gt 0) 'Dinghies row out before their crew walks ashore'
-$loading=[Pyrate.RaidMotion]::Sample(3,1)
-Require ($loading.CargoStowed -eq 1 -and $loading.BoatTravel -eq 1) 'The crew loads the cargo at the quay before the dinghy heads back'
-$lifting=[Pyrate.RaidMotion]::Sample(4,.75)
-Require ($lifting.BoatTravel -eq 0 -and $lifting.CargoLift -gt 0 -and $lifting.CargoLift -lt 1) 'Cargo hoists continuously after the dinghy reaches the ship'
-$boarding=[Pyrate.RaidMotion]::Sample(5,.65)
-Require ($boarding.CrewAboard -gt 0 -and $boarding.CrewAboard -lt 1 -and $boarding.BoatLift -eq 0) 'Crew climbs aboard before the dinghies lift'
-$stowing=[Pyrate.RaidMotion]::Sample(6,1)
-Require ($stowing.BoatLift -eq 1 -and $stowing.CrewAboard -eq 1 -and $stowing.CargoLift -eq 1) 'The finale leaves crew, cargo and dinghies all aboard'
 Write-Output "$script:Checks voyage checks passed."

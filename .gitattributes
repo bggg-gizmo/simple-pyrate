@@ -8,3 +8,7 @@
 *.mid binary
 *.mp3 binary
 *.zip binary
+
+# Keep historical builds accessible in Git without bundling them into current source ZIPs.
+/old_builds export-ignore
+/old_builds/** export-ignore

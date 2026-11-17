@@ -24,33 +24,24 @@ namespace Pyrate {
             }
             dc.DrawGeometry(fill,pen,geo);
         }
-        private static int FireCount(int stage) {
-            return stage < 1 ? 0 : stage >= 6 ? 7 : Math.Min(6,stage+1);
-        }
         private void DrawPortDamage(DrawingContext dc,int port,double now) {
             int stage=frame.RaidStage;
             if(stage<1) return;
-            double blend=motion ? Ease(frame.RaidAge/Math.Max(.2,frame.RaidBeat)*2) : 1;
-            double ruin=stage==6 ? blend : 0;
-            int fireCount=FireCount(stage), oldCount=FireCount(stage-1);
+            int fireCount=stage>=6 ? 7 : Math.Min(6,stage+1);
             for(int i=0;i<fireCount;i++) {
                 int index=(i*3+port)%7;
                 double x=RoofX[port,index],y=RoofY[port,index];
                 double q=motion ? now*2.3+i*1.72 : i*1.72;
-                if(ruin>0 && index!=1) {
+                if(stage==6 && index!=1) {
                     var wreck=new Rect(x-21,y-4,42,Math.Max(5,274-y));
-                    dc.PushOpacity(ruin);
                     dc.PushClip(new RectangleGeometry(wreck));
                     dc.DrawRectangle(HullRuin,null,wreck);
                     Shape(dc,Rubble,Char,new Point(x-21,267),new Point(x-16,y+23),new Point(x-7,y+40),
                         new Point(x-4,y+29),new Point(x+3,y+43),new Point(x+17,y+33),new Point(x+21,268));
                     dc.DrawLine(Char,new Point(x-15,265),new Point(x+14,y+37));
                     dc.Pop();
-                    dc.Pop();
-                    x+=4*ruin;
-                    y+=Lerp(14,38,ruin);
+                    x+=4; y+=38;
                 } else y+=14;
-                dc.PushOpacity(i < oldCount ? 1 : blend);
                 double intensity=.65+.2*Math.Sin(q);
                 Overlay(dc,gunGlow,x,y+10,26,27,intensity*.57);
                 Shape(dc,spark,null,new Point(x-7,y+13),new Point(x-5,y+2),new Point(x-2,y-5+3*Math.Sin(q)),
@@ -58,11 +49,9 @@ namespace Pyrate {
                 Overlay(dc,flash,x+2,y+9,3.1,6,intensity);
                 for(int k=0;k<4;k++) {
                     double rise=(k*.25+(motion ? now*.23 : .18))%1.0;
-                    double thickness=.48+(stage-1+blend)*.045;
-                    Overlay(dc,exhaust,x+rise*25-7,y-5-rise*79,7+18*rise,5+11*rise,(1-rise)*thickness);
+                    Overlay(dc,exhaust,x+rise*25-7,y-5-rise*79,7+18*rise,5+11*rise,(1-rise)*(.48+stage*.045));
                     if(motion) Overlay(dc,spark,x+5*Math.Sin(q+k)+rise*20,y-5-rise*37,1.1,1.1,(1-rise)*.82);
                 }
-                dc.Pop();
             }
         }
         private void CrateAt(DrawingContext dc,double x,double y,double size) {
@@ -80,54 +69,41 @@ namespace Pyrate {
         private void DrawRaidCrew(DrawingContext dc,double hullX,double hullY,int port,double now) {
             int stage=frame.RaidStage;
             if(stage<2) return;
-            double progress=motion ? Clamp(frame.RaidAge/Math.Max(.2,frame.RaidBeat)) : 1;
-            RaidMotion pose=RaidMotion.Sample(stage,progress);
-            double dockX=856+port*12, deck=hullY-21;
-            double rowing=motion ? Math.Sin(now*8) : 0;
-            double pace=motion ? Math.Sin(now*9)*pose.WalkEffort : 0;
-            dc.PushOpacity(pose.BoatPresence);
+            double age=motion ? frame.RaidAge/Math.Max(.2,frame.RaidBeat) : 1.2;
+            double p=Ease(age/.64), dockX=856+port*12;
+            double pace=motion ? Math.Sin(now*9) : 0;
+            double deck=hullY-21;
             for(int i=0;i<3;i++) {
-                double quay=dockX+24*i, start=hullX+8*i;
-                double boatX=Lerp(start,quay,pose.BoatTravel)-8*i*pose.BoatLift;
+                double quay=dockX+24*i, boatY=309+10*i, start=hullX+8*i;
+                double boatX=stage==2 ? Lerp(start,quay,p) : stage==3 ? quay :
+                    stage==4 ? Lerp(quay,start,p) : stage==5 ? start : start-8*i;
+                if(stage==6) boatY=Lerp(boatY,deck+5,p);
                 double bob=motion ? Math.Sin(now*4+i)*1.4 : 0;
-                double boatY=Lerp(309+10*i+bob,deck+5,pose.BoatLift);
-                double crewX=Lerp(Lerp(boatX,quay+55,pose.CrewShore),start-3,pose.CrewAboard);
-                double crewY=Lerp(Lerp(boatY-2,270,pose.CrewShore),deck+1,pose.CrewAboard);
-
-                if(pose.BoatLift>0 && pose.BoatLift<1) {
-                    dc.PushOpacity(Ease(pose.BoatLift*8)*Ease((1-pose.BoatLift)*8));
-                    dc.DrawLine(Rope,new Point(start,deck-7),new Point(boatX,boatY-1));
-                    dc.Pop();
-                }
-                Overlay(dc,foamLight,boatX,boatY+3,20,2,.51*(1-pose.BoatLift));
+                boatY+=bob;
+                if(stage==6) dc.DrawLine(Rope,new Point(start,deck-7),new Point(boatX,boatY-1));
+                Overlay(dc,foamLight,boatX,boatY+3,20,2,.51);
                 Shape(dc,Crate,GoldEdge,new Point(boatX-13,boatY-4),new Point(boatX+13,boatY-4),
                     new Point(boatX+8,boatY+2),new Point(boatX-8,boatY+2));
-                if(pose.OarEffort>0) {
-                    dc.PushOpacity(pose.OarEffort);
-                    dc.DrawLine(Oar,new Point(boatX-5,boatY-5),new Point(boatX+3+rowing*4,boatY+5));
-                    dc.Pop();
+                if(stage==2 || stage==4) dc.DrawLine(Oar,new Point(boatX-5,boatY-5),new Point(boatX+3+pace*4,boatY+5));
+                if(stage==2 && p<.85) CrewAt(dc,boatX,boatY-2,pace,false);
+                if(stage==2 || stage==3) {
+                    double track=stage==2 ? p : 1-p;
+                    CrewAt(dc,quay+Lerp(-7,55,track),Lerp(303,270,track),pace,stage==3);
+                    if(stage==3) CrateAt(dc,boatX-4,boatY-2,6);
                 }
-                if(pose.CrewAboard>0 && pose.CrewAboard<1) {
-                    dc.PushOpacity(Ease(pose.CrewAboard*8)*Ease((1-pose.CrewAboard)*8));
+                if(stage>=4) {
+                    double lift=stage==4 ? Ease((age-.25)/.68) : 1;
+                    double cx=Lerp(boatX,start,lift), cy=Lerp(boatY-2,deck-2-i*2,lift);
+                    dc.DrawLine(Rope,new Point(start,deck-12),new Point(cx,cy-6));
+                    CrateAt(dc,cx,cy,8);
+                }
+                if(stage>=5) {
+                    double aboard=stage==5 ? p : 1;
                     dc.DrawLine(Rope,new Point(start-3,deck-7),new Point(start-3,boatY));
-                    dc.Pop();
+                    CrewAt(dc,start-3,Lerp(boatY-1,deck+1,aboard),pace,false);
                 }
-                CrewAt(dc,crewX,crewY,pace,false);
-                if(pose.CargoPresence>0) {
-                    double cx=Lerp(Lerp(crewX-5,boatX-4,pose.CargoStowed),start,pose.CargoLift);
-                    double cy=Lerp(Lerp(crewY-3,boatY-2,pose.CargoStowed),deck-2-i*2,pose.CargoLift);
-                    dc.PushOpacity(pose.CargoPresence);
-                    if(pose.CargoLift>0 && pose.CargoLift<1) {
-                        dc.PushOpacity(Ease(pose.CargoLift*8)*Ease((1-pose.CargoLift)*8));
-                        dc.DrawLine(Rope,new Point(start,deck-12),new Point(cx,cy-6));
-                        dc.Pop();
-                    }
-                    CrateAt(dc,cx,cy,Lerp(6,8,pose.CargoLift));
-                    dc.Pop();
-                }
-                Overlay(dc,SailWhite,boatX,boatY,4,1,.5*Ease((pose.BoatLift-.8)/.2));
+                if(stage==6 && p>=.95) Overlay(dc,SailWhite,boatX,boatY,4,1,.5);
             }
-            dc.Pop();
         }
     }
 }

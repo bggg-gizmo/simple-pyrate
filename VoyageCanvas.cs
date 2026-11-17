@@ -17,10 +17,8 @@ namespace Pyrate {
         private readonly SolidColorBrush paper=Solid(0xe9ecda), gold=Solid(0xeec38d), mistText=Solid(0xafd0be), green=Solid(0x77c0b1);
         private readonly SolidColorBrush flash=Solid(0xffdba0), spark=Solid(0xffad64);
         private readonly Brush edge, textShade, captionFog, exhaust, gunGlow, seaShade;
-        private VoyageFrame frame, outgoingFrame;
-        private double time, labelSince, outgoingTime, dissolveSince, dissolveLength;
-        private DrawingGroup outgoingScenery;
-        private Rect outgoingViewport;
+        private VoyageFrame frame;
+        private double time, labelSince;
         private bool motion=true;
         private string lastLabel="";
         private Shot lastShot=(Shot)(-1);
@@ -65,18 +63,6 @@ namespace Pyrate {
 
         public void Present(VoyageFrame next,double now,bool animate) {
             if (next==null) return;
-            bool sceneChanged=frame!=null && (frame.Shot!=next.Shot ||
-                (next.Shot==Shot.Battle && frame.Port!=next.Port));
-            if (!animate || !motion) {
-                outgoingFrame=null;
-                outgoingScenery=null;
-            } else if (sceneChanged) {
-                outgoingFrame=frame;
-                outgoingTime=time;
-                dissolveSince=now;
-                dissolveLength=next.Duration>0 ? Math.Min(.40,next.Duration*.75) : .40;
-                outgoingScenery=null;
-            }
             bool changed = next.Headline!=lastLabel || lastShot!=next.Shot ||
                 (next.Shot==Shot.Battle && lastPort!=next.Port);
             bool update = animate || changed || frame==null || motion!=animate || (frame!=null && (frame.Detail!=next.Detail || frame.RaidStage!=next.RaidStage));
@@ -108,40 +94,12 @@ namespace Pyrate {
             dc.PushClip(new RectangleGeometry(viewport));
             if (frame==null) { dc.DrawRectangle(ink,null,viewport); dc.Pop(); return; }
             DrawScenery(dc,viewport);
-            double reveal=1;
-            if (outgoingFrame!=null) {
-                reveal=Ease((time-dissolveSince)/dissolveLength);
-                if (reveal<1) {
-                    dc.PushOpacity(1-reveal);
-                    dc.DrawDrawing(GetOutgoingScenery(viewport));
-                    dc.Pop();
-                } else {
-                    outgoingFrame=null;
-                    outgoingScenery=null;
-                }
-            }
-            dc.PushOpacity(reveal);
             DrawHud(dc,w,h);
-            dc.Pop();
-            dc.Pop();
-        }
-        private DrawingGroup GetOutgoingScenery(Rect viewport) {
-            if (outgoingScenery!=null && outgoingViewport==viewport) return outgoingScenery;
-            var active=frame;
-            double activeTime=time;
-            var snapshot=new DrawingGroup();
-            try {
-                frame=outgoingFrame;
-                time=outgoingTime;
-                using (DrawingContext drawing=snapshot.Open()) DrawScenery(drawing,viewport);
-            } finally {
-                frame=active;
-                time=activeTime;
+            if (motion && (frame.Shot==Shot.OpenSea || frame.Shot==Shot.Battle || frame.Shot==Shot.Return) && frame.Age<.28) {
+                double opacity=.6*(1-Ease(frame.Age/.28));
+                dc.PushOpacity(opacity); dc.DrawRectangle(ink,null,viewport); dc.Pop();
             }
-            if (snapshot.CanFreeze) snapshot.Freeze();
-            outgoingViewport=viewport;
-            outgoingScenery=snapshot;
-            return snapshot;
+            dc.Pop();
         }
         private void DrawScenery(DrawingContext dc,Rect viewport) {
             double w=viewport.Width, h=viewport.Height;
@@ -192,7 +150,7 @@ namespace Pyrate {
             switch(frame.Shot) {
                 case Shot.Departure:
                     coast=1;
-                    shipX=Lerp(504,1220,p); shipY=Lerp(125,150,p); zoom=Lerp(.78,.55,p);
+                    shipX=Lerp(504,1220,p); shipY=Lerp(123,150,p); zoom=Lerp(.78,.55,p);
                     break;
                 case Shot.OpenSea:
                     shipX=510+(motion ? Math.Sin(now*.8)*25 : 0);
@@ -234,8 +192,8 @@ namespace Pyrate {
             }
             Overlay(dc,textShade,center,deck-4,172*zoom,14,.52);
 
-            double burst=motion && frame.Shot==Shot.Battle && frame.RaidSceneAge>.13 ? (frame.RaidSceneAge-.13)%2.7 : -1;
-            double recoil=frame.RaidStage<2 && burst>=0 && burst<.22 ? -8*Ease(burst/.035)*(1-Ease(burst/.22)) : 0;
+            double burst=motion && frame.Shot==Shot.Battle && frame.Age>.13 ? (frame.Age-.13)%2.7 : -1;
+            double recoil=frame.RaidStage<2 && burst>=0 && burst<.22 ? -(1-burst/.22)*8 : 0;
             double angle=motion ? Math.Sin(now*1.13)*1.7 : 0;
             dc.PushTransform(new RotateTransform(angle,center,deck-16));
             if (reverse) dc.PushTransform(new ScaleTransform(-1,1,center,0));
@@ -323,8 +281,10 @@ namespace Pyrate {
             double glide=motion ? 17*(1-Ease(elapsed/.60)) : 0;
             bool keepsTitle=frame.Shot==Shot.Harbor || frame.Shot==Shot.OpenSea;
             double arriving=motion ? Ease(elapsed/.40) : 1;
-            double departing=motion && !keepsTitle && frame.Shot!=Shot.Battle && frame.Duration>0 && frame.Age>=frame.Duration-.37
+            double departing=motion && !keepsTitle && frame.Duration>0 && frame.Age>=frame.Duration-.37
                 ? Math.Max(.33,1-Ease((frame.Age-(frame.Duration-.37))/.37)) : 1;
+            // Long active battles keep a readable title after the first smoke pulse.
+            if(frame.Shot==Shot.Battle && frame.Age>=frame.Duration) departing=1;
             double alpha=arriving*departing;
             double y=h*.34;
             double font=w<720 ? 32 : 44;
