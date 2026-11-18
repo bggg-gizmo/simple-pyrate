@@ -33,7 +33,7 @@ The original ship, port silhouettes, layered moon and sea artwork, playlists, se
 
 ## Build directly
 
-The complete Android source release ZIP includes the pinned runtime files and original icon artwork. In a Git checkout, restore those assets from the release archive by following the [runtime hydration guide](../docs/RUNTIME-HYDRATION.md).
+The complete Android source ZIP distributed by the maintainer includes the pinned runtime files and original icon artwork. The Git checkout contains Android source and launcher resources. To build from the checkout with the original runtime, first obtain the matching archive from the maintainer and follow the [runtime hydration guide](../docs/RUNTIME-HYDRATION.md). The ZIP is not hosted on GitHub.
 
 The Android source archive includes Java source, manifest, resources, original assets, vendor payloads and source/license metadata. A source rebuild uses the supplied OpenJDK 17, extracted r36 build tools, the supplied `android-36/android.jar`, and your APK signing key. It follows MirrorMax’s direct Java 11, JAR and D8 sequence, with native libraries packaged and page-aligned before signing. End users do not install any of those build-time tools. There is no Gradle project, Android Studio project, CI, or GitHub Action.
 

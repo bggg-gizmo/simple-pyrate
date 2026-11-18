@@ -19,14 +19,14 @@ See Simple Pyrate queue an MP4 and transcript, sail from port to port, and retur
 
 [Open the walkthrough GIF](assets/Simple-Pyrate-v2.5.7-Walkthrough.gif)
 
-## Download
+## Get the source
 
-Open [GitHub Releases](https://github.com/bggg-gizmo/simple-pyrate/releases) for the v2.6.3 Windows ZIP, signed Android APK, source archives, and release checksum file. The [repository checksum list](SHA256SUMS.txt) records the SHA-256 for each v2.6.3 artifact and the original v2.5.2 Windows ZIP.
+The `main` branch contains the v2.6.3 source. Clone the repository or use **Code → Download ZIP**. The Windows and Android build files are not published on GitHub. If you already have a v2.6.3 package from the maintainer, check its SHA-256 against [SHA256SUMS.txt](SHA256SUMS.txt).
 
 | Platform | Getting started |
 | --- | --- |
-| Windows 10 and 11 (x64 or ARM64) | Extract the Windows release ZIP and run `Start-Simple-Pyrate.cmd`. |
-| Android 10 or newer (ARM64 or x86-64) | Download and tap the standalone APK. See the [Android installation guide](android/docs/ANDROID-INSTALL.md) and [Android source](android/README.md). |
+| Windows 10 and 11 (x64 or ARM64) | From the checkout, run `Start-Simple-Pyrate.cmd`. Shipyard can check and install supported dependencies. |
+| Android 10 or newer (ARM64 or x86-64) | See the [Android build instructions](android/README.md). If you already have the signed APK, see the [installation guide](android/docs/ANDROID-INSTALL.md). |
 
 v2.6.3 is a release candidate. The Windows engine was tested with local fixtures under PowerShell 7 on Linux. The signed APK passed package checks, but this exact build has not been tested on an Android device. Its signing certificate differs from v2.6.2.
 
@@ -38,7 +38,7 @@ Follow the [Windows test checklist](docs/WINDOWS-TEST.md) for native Windows val
 
 **Sound defaults.** Port effects and ship bells are on for new profiles. If you upgraded from a build that saved them off, open **Settings → Port sound effects** and enable them once. Sea ambience has its own switch, so hearing the sea doesn’t mean port effects are on.
 
-The v2.6.3 ZIP includes the versioned launcher, first-run setup, ship bells, and bundled x64 and ARM64 dependencies. No separate compile or build step is needed. Extract it to a fresh folder instead of copying over an earlier build.
+The full Windows package includes bundled x64 and ARM64 dependencies. The Git checkout has the launcher, first-run setup, ship bells, and original assets, and uses Shipyard or existing tools on the system PATH if the bundled files are not present. Keep this version in its own folder.
 
 [Original v2.5.2 Windows package](https://github.com/bggg-gizmo/simple-pyrate/blob/main/old_builds/v2.5.2/Simple-Pyrate-v2.5.2-Windows.zip) · [Original package SHA-256](SHA256SUMS.txt)
 
@@ -46,7 +46,7 @@ The original packaged ZIP is unchanged and does not contain the setup and bell u
 
 ## Launch on Windows
 
-1. Extract the entire current ZIP to a folder you control. Open the extracted folder that contains `Start-Simple-Pyrate.cmd` and keep its scripts and assets together. Do not open the older Windows ZIP inside it.
+1. Open the checkout or extracted source folder that contains `Start-Simple-Pyrate.cmd`. Keep its scripts and assets together. Do not run the launcher from `old_builds` unless you want an older version.
 2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
 3. The wizard opens with **Welcome to Simple Pyrate** and **Let’s set up your ship**. It guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
 4. If you chose a per-user install, launch **Simple Pyrate v2.6.3** from the Start Menu next time. For portable mode, keep the extracted folder in place.
@@ -151,7 +151,7 @@ The engine, voyage, and audio suites remain in place, and `Upgrade.Tests.ps1` ad
 
 ## Previous builds
 
-The Windows ZIP is runnable and includes its PowerShell, C#, XAML, assets, and bundled x64 and ARM64 tools. The separate source ZIP contains the same application source, assets, tests, dependency licenses and hashes without the prebuilt executables and DLLs. Copy the two architecture runtime folders from the matching Windows release ZIP to use the bundled versions from a source checkout. Earlier builds remain under [old_builds](old_builds/README.md). To restore the verified bundled components into a checkout, see [runtime hydration](docs/RUNTIME-HYDRATION.md).
+The Windows ZIP is runnable and includes its PowerShell, C#, XAML, assets, and bundled x64 and ARM64 tools. The separate source ZIP contains the same application source, assets, tests, dependency licenses and hashes without the prebuilt executables and DLLs. If you already have the matching Windows package, you can restore its bundled runtime in a checkout. Otherwise use Shipyard to install missing tools. Earlier builds remain under [old_builds](old_builds/README.md). To restore the verified bundled components into a checkout, see [runtime hydration](docs/RUNTIME-HYDRATION.md).
 
 - [v2.5.7](old_builds/v2.5.7/) preserves the accepted Windows build and walkthrough.
 - [v2.5.6](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.6/) preserves the previous renderer and audio code.
