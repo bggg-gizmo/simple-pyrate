@@ -1,6 +1,6 @@
 # Windows release-candidate checklist
 
-Run this on Windows 10 or 11 in an interactive desktop session. Extract the v2.5.7 candidate to its own folder. Do not copy it over an earlier build. Launch the root CMD in the extracted current source folder, not the older package ZIP or `old_builds`. The [packaging checksum](../SHA256SUMS.txt) applies only to the original v2.5.2 Windows ZIP.
+Run this on Windows 10 or 11 in an interactive desktop session. Extract the v2.6.3 candidate to its own folder. Do not copy it over an earlier build. Launch the root CMD in the extracted current source folder, not the older package ZIP or `old_builds`. The [packaging checksum](../SHA256SUMS.txt) applies only to the original v2.5.2 Windows ZIP.
 
 ## 1. Prove Windows PowerShell 5.1 startup first
 
@@ -11,7 +11,7 @@ Start-Simple-Pyrate.cmd -SmokeTest
 echo %errorlevel%
 ```
 
-Expected result is the v2.5.7 WPF smoke test pass message and exit code `0`. This exercises the same Windows PowerShell 5.1 compiler and assemblies as the normal launcher, loads WPF XAML, renders the 98% port scene, constructs the settings and setup screens, renders the welcome ship artwork at three widths, and checks that the playlists are present and the WAV recordings can be read as PCM. It does not install anything, open a wallet, change preferences, or play audio.
+Expected result is the v2.6.3 WPF smoke test pass message and exit code `0`. This exercises the same Windows PowerShell 5.1 compiler and assemblies as the normal launcher, loads WPF XAML, renders the 98% port scene, constructs the settings and setup screens, renders the welcome ship artwork at three widths, and checks that the playlists are present and the WAV recordings can be read as PCM. It does not install anything, open a wallet, change preferences, or play audio.
 
 If it fails, preserve the exact console output and `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log`. If the normal launch fails, run `Start-Simple-Pyrate.cmd -Diagnose` for console output. Report Windows build, processor architecture, and the startup stage from the log.
 
@@ -38,8 +38,20 @@ From the extracted folder, run `powershell.exe -NoProfile -ExecutionPolicy Bypas
 - Observe a source already in MP4 and a WebM source that goes through the finalizer. The deck should name the merge or encode operation, track elapsed time, and show real percentage or an indeterminate bar when duration is unavailable. During a longer conversion, try **Stop active**. Confirm the source intermediate is preserved, no incomplete MP4 is reported as finished, and restarting does not overwrite a finished MP4.
 - Copy the XMR address from **Settings** and compare it with the displayed address. If you have a registered Monero wallet, open the URI and verify its recipient. Do not send a payment as part of testing.
 
-Earlier v2.5.2 checks with Linux PowerShell 7 and .NET Framework reference assemblies do not establish how v2.5.7 behaves. Record the version and exact build tested and the result of each native Windows check.
+Earlier v2.5.2 checks with Linux PowerShell 7 and .NET Framework reference assemblies do not establish how v2.6.3 behaves. Record the version and exact build tested and the result of each native Windows check.
 
 ## Focused audio check
 
 Run `powershell.exe -NoProfile -File .\tests\ShipAudio.Tests.ps1 -Playback` in a normal Windows terminal. The test runs an ambience loop, cannon and port bell together, checks completion, then checks that muting the effects leaves the sea loop running. Without `-Playback` it only validates the 11 WAV files. On Linux, the playback integration can be exercised using a single-device test adapter, which is not a listening test.
+
+## v2.6.3 tool and credential checks
+
+- On an x64 or ARM64 Windows machine without managed tools on system PATH, confirm Shipyard reports the matching runtime from the extracted package and run a local fixture haul without UAC.
+- Open Settings → Source access. Use an authorized local cookie test fixture or a nonsecret dummy token. Verify the masked entry and preview the ship’s log for redaction. Clear the session when finished.
+- With no active haul, choose Shipyard → Refresh managed tools. Approve UAC and confirm the verified managed copies take priority over bundled ones on the next tool check. Confirm that existing nonmanaged copies are untouched.
+
+## Source access and donation
+
+- In Captain’s settings, use **Support the crew · XMR donation**. Verify that the unchanged address and both wallet actions are visible and reachable.
+- With a local signed-in Firefox profile, use **Source access → Use browser sign-in** and queue content your account can access. Confirm the active detail identifies the browser step and no session secrets appear in the ship’s log. Restart Simple Pyrate and verify that browser access is off until enabled again.
+- Confirm that importing a cookie export selects the file path workflow instead of merging it with credentials from the browser. Verify the manual PO token still passes to its matching YouTube client.

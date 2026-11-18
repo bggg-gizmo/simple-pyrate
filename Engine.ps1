@@ -43,8 +43,10 @@ function Get-BwLanguages([string]$Value) {
     }) -join ',')
 }
 function Get-BwToolPaths {
+    param([switch]$MachineOnly)
     $locations = [Collections.Generic.List[string]]::new()
-    $own = Join-Path ([Environment]::GetFolderPath('ProgramFiles')) 'BGGG\Blackwake\bin'
+    $programs=[Environment]::GetFolderPath('ProgramFiles')
+    $own=if ($programs) { Join-Path $programs 'BGGG\Blackwake\bin' } else { '' }
     foreach ($entry in ([Environment]::GetEnvironmentVariable('Path','Machine') -split ';')) {
         if (!$entry -or !$entry.Trim()) { continue }
         $dir = [Environment]::ExpandEnvironmentVariables($entry.Trim().Trim('"'))
@@ -71,6 +73,23 @@ function Get-BwToolPaths {
             $tools['ffmpeg'] = $ff; $tools['ffprobe'] = $fp; break
         }
     }
+    if (!$MachineOnly) {
+        $architecture=if ($env:PROCESSOR_ARCHITEW6432) { $env:PROCESSOR_ARCHITEW6432 } else { $env:PROCESSOR_ARCHITECTURE }
+        $bundle=if ($architecture -eq 'ARM64') { 'windows-arm64' } elseif ($architecture -eq 'AMD64') { 'windows-x64' } else { '' }
+        if ($bundle) {
+            $runtime=Join-Path (Join-Path $PSScriptRoot 'runtime') $bundle
+            if (Test-Path -LiteralPath $runtime -PathType Container) {
+                foreach ($name in @('yt-dlp','deno')) {
+                    $bundled=Join-Path $runtime "$name.exe"
+                    if (!$tools[$name] -and [IO.File]::Exists($bundled)) { $tools[$name]=$bundled }
+                }
+                $ff=Join-Path $runtime 'ffmpeg.exe'; $fp=Join-Path $runtime 'ffprobe.exe'
+                if (!$tools['ffmpeg'] -and [IO.File]::Exists($ff) -and [IO.File]::Exists($fp)) {
+                    $tools['ffmpeg']=$ff; $tools['ffprobe']=$fp
+                }
+            }
+        }
+    }
     return $tools
 }
 function Get-BwAppVersion([string]$Root) {
@@ -82,7 +101,86 @@ function Get-BwAppVersion([string]$Root) {
     }
     return $value
 }
-function New-BwArguments($Job, [string]$Mode, $Tools) {
+function New-BwSourceAccess([string]$PoToken,[byte[]]$Cookies,[string]$Browser='') {
+    $Browser=$Browser.ToLowerInvariant()
+    if ($Browser -notin @('','firefox','edge','chrome','brave','vivaldi')) { throw 'Select a supported browser.' }
+    if ($Browser -and $Cookies) { throw 'Choose either a browser session or an imported cookie file.' }
+    $po=$PoToken.Trim()
+    if ($po -and ($po.Length -gt 16384 -or $po -cnotmatch '^[A-Za-z0-9_-]+\.(?:gvs|player|subs)\+[A-Za-z0-9_-]+={0,2}(?:,[A-Za-z0-9_-]+\.(?:gvs|player|subs)\+[A-Za-z0-9_-]+={0,2})*$')) {
+        throw 'Enter PO tokens as client.context+token, with commas between tokens.'
+    }
+    if ($Cookies -and ($Cookies.Length -gt 1MB -or [Text.Encoding]::UTF8.GetString($Cookies) -cnotmatch '\A(?:\uFEFF)?# (?:Netscape HTTP Cookie File|HTTP Cookie File)\b')) {
+        throw 'Select a Netscape-format cookies.txt export no larger than 1 MiB.'
+    }
+    return [pscustomobject]@{ Po=$po; Cookies=$Cookies; Browser=$Browser }
+}
+function Read-BwCookieExport([string]$Path) {
+    $item=[IO.FileInfo]::new($Path)
+    if (!$item.Exists -or $item.Length -lt 1 -or $item.Length -gt 1MB) { throw 'The selected cookie file is missing, empty, or larger than 1 MiB.' }
+    $bytes=[IO.File]::ReadAllBytes($item.FullName)
+    $null=New-BwSourceAccess '' $bytes
+    return ,$bytes
+}
+function New-BwJobAccess($Access,[string]$Source) {
+    if (!$Access) { return $null }
+    $uri=[uri]$Source
+    $youtube=$uri.DnsSafeHost -match '(?:^|\.)youtube\.com$|^youtu\.be$'
+    $browser=[string](Get-BwValue $Access Browser)
+    if ($browser -notin @('','firefox','edge','chrome','brave','vivaldi')) { throw 'Select a supported browser.' }
+    if ($browser -and $Access.Cookies) { throw 'Choose either a browser session or an imported cookie file.' }
+    if (!(($youtube -and $Access.Po) -or $Access.Cookies -or $browser)) { return $null }
+    $profile=[Environment]::GetFolderPath('LocalApplicationData')
+    if (!$profile) { $profile=[Environment]::GetFolderPath('UserProfile') }
+    if (!$profile) { throw 'A private user profile is required for source credentials.' }
+    $base=Join-Path $profile 'BGGG\Blackwake'
+    $null=[IO.Directory]::CreateDirectory($base)
+    $dir=Join-Path $base ('.source-access-'+[guid]::NewGuid().ToString('N'))
+    try {
+        $null=[IO.Directory]::CreateDirectory($dir)
+        if ([IO.Path]::DirectorySeparatorChar -eq '\') {
+            $who=[Security.Principal.WindowsIdentity]::GetCurrent().User
+            $acl=[Security.AccessControl.DirectorySecurity]::new()
+            $acl.SetAccessRuleProtection($true,$false)
+            $rule=[Security.AccessControl.FileSystemAccessRule]::new($who,'FullControl','ContainerInherit,ObjectInherit','None','Allow')
+            $acl.AddAccessRule($rule)
+            Set-Acl -LiteralPath $dir -AclObject $acl
+        }
+        $lines=[Collections.Generic.List[string]]::new()
+        if ($youtube -and $Access.Po) {
+            $clients=@('default') + @($Access.Po.Split(',') | ForEach-Object { ($_ -split '\.',2)[0] } | Select-Object -Unique)
+            $lines.Add("--extractor-args 'youtube:po_token=$($Access.Po);player_client=$($clients -join ',')'")
+        }
+        if ($browser) { $lines.Add("--cookies-from-browser '$browser'") }
+        if ($Access.Cookies) {
+            $jar=Join-Path $dir 'cookies.txt'
+            [IO.File]::WriteAllBytes($jar,[byte[]]$Access.Cookies)
+            $escaped=$jar.Replace("'","'"+[char]92+"''")
+            $lines.Add("--cookies '$escaped'")
+        }
+        $path=Join-Path $dir 'yt-dlp.conf'
+        [IO.File]::WriteAllLines($path,$lines,[Text.UTF8Encoding]::new($false))
+        return [pscustomobject]@{ Directory=$dir; Config=$path; Access=$Access }
+    } catch {
+        if ([IO.Directory]::Exists($dir)) { [IO.Directory]::Delete($dir,$true) }
+        throw
+    }
+}
+function Protect-BwAccessLog([string]$Line,$Session) {
+    if (!$Session) { return $Line }
+    $Line=$Line.Replace($Session.Directory,'[source credentials]')
+    foreach ($entry in $Session.Access.Po.Split(',')) {
+        $separator=$entry.IndexOf('+')
+        if ($separator -ge 0) { $Line=$Line.Replace($entry,'[PO token]').Replace($entry.Substring($separator+1),'[PO token]') }
+    }
+    if ($Session.Access.Cookies -and $Line -match 'cookie|authorization|http header') {
+        foreach ($cookie in ([Text.Encoding]::UTF8.GetString($Session.Access.Cookies) -split '\r?\n')) {
+            $fields=$cookie -split ([char]9),7
+            if ($fields.Count -eq 7 -and $fields[6]) { $Line=$Line.Replace($fields[6],'[cookie]') }
+        }
+    }
+    return $Line
+}
+function New-BwArguments($Job, [string]$Mode, $Tools, [string]$AccessConfig) {
     $format = '%(title).100B [%(extractor_key).22B-%(id).42B].%(ext)s'
     $argsList = @('--ignore-config','--no-plugin-dirs','--encoding','utf-8','--no-colors','--newline','--progress','--progress-delta','0.25',
         '--no-overwrites','--continue','--windows-filenames','--no-mtime','--socket-timeout','25','--retries','3','--fragment-retries','3',
@@ -110,6 +208,7 @@ function New-BwArguments($Job, [string]$Mode, $Tools) {
         }
         default { throw "Unknown output mode $Mode." }
     }
+    if ($AccessConfig) { $argsList += @('--config-locations',$AccessConfig) }
     $argsList += @('--',$Job.Url)
     return $argsList
 }
@@ -357,7 +456,9 @@ function Invoke-BwMp4Finalization([string]$Source,[string]$Folder,[string]$Title
 function Invoke-BwJob($Job,$Tools,$Events,$Cancel) {
     $outputs = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
     $stats = @{ Errors=0; Missing=0; Items=0; Cancelled=$false; ExitFailures=0 }
+    $sourceAccess=$null
     try {
+        $sourceAccess=New-BwJobAccess (Get-BwValue $Job Access) $Job.Url
         foreach ($mode in $Job.Modes) {
             if ($Cancel.IsCancellationRequested) { $stats.Cancelled = $true; break }
             $output = Join-Path $Job.Destination (@{ MP4='Video'; MP3='Audio'; Captions='Transcripts' }[$mode])
@@ -371,14 +472,31 @@ function Invoke-BwJob($Job,$Tools,$Events,$Cancel) {
             }
             Publish-Bw $Events 'phase' $mode
             try {
-                $port = @{ Open=$false; Id=$null; Formats=@(); Seen=@{} }
+                $resolveClock=[Diagnostics.Stopwatch]::StartNew()
+                $port = @{ Open=$false; Id=$null; Formats=@(); Seen=@{}; ResolveLogged=$false; Step='' }
                 $handler = {
                     param([string]$Line,[bool]$IsErrorChannel)
+                    $Line=Protect-BwAccessLog $Line $sourceAccess
+                    if (!$port.Open -and !$port.ResolveLogged) {
+                        $step=switch -Regex ($Line) {
+                            'player API JSON' { 'Getting stream details'; break }
+                            'Downloading webpage' { 'Getting source page'; break }
+                            'Downloading player' { 'Preparing player'; break }
+                            'Downloading (?:m3u8|MPD)' { 'Checking stream manifest'; break }
+                            'Solving JS challenges' { 'Checking media signatures'; break }
+                            '^Extracting cookies from' { 'Opening the selected browser session'; break }
+                        }
+                        if ($step -and $step -ne $port.Step) { $port.Step=$step; Publish-Bw $Events 'resolving' $step }
+                    }
                     if ($Line.StartsWith('BW_PORT ')) {
                         $f = $Line.Substring(8) -split "`t",4
                         if ($f.Count -ne 4) { return }
                         $id = ConvertFrom-BwJson $f[0]
                         if ($port.Open -and $id -eq $port.Id) { return }
+                        if (!$port.ResolveLogged) {
+                            $port.ResolveLogged=$true
+                            Publish-Bw $Events 'log' "$mode source metadata ready in $($resolveClock.ElapsedMilliseconds) ms."
+                        }
                         $port.Open=$true; $port.Id=$id; $port.Formats=@(); $port.Seen.Clear()
                         Publish-Bw $Events 'port' @{
                             Mode=$mode; Id=$id; Title=(ConvertFrom-BwJson $f[1]);
@@ -490,7 +608,8 @@ function Invoke-BwJob($Job,$Tools,$Events,$Cancel) {
                     Publish-Bw $Events 'log' $Line
                 }
                 $previousSize = $outputs.Count
-                $result = Invoke-BwProcess $Tools['yt-dlp'] (New-BwArguments $Job $mode $Tools) $handler $Cancel $actual
+                $launch=if ($sourceAccess) { New-BwArguments $Job $mode $Tools $sourceAccess.Config } else { New-BwArguments $Job $mode $Tools }
+                $result = Invoke-BwProcess $Tools['yt-dlp'] $launch $handler $Cancel $actual
                 if ($result -eq -999) { $stats.Cancelled=$true; break }
                 if ($result -ne 0) {
                     $stats.ExitFailures += 1
@@ -510,6 +629,10 @@ function Invoke-BwJob($Job,$Tools,$Events,$Cancel) {
         $stats.Errors += 1
         Publish-Bw $Events 'log' "ERROR: $($_.Exception.Message)"
     } finally {
+        if ($sourceAccess) {
+            try { [IO.Directory]::Delete($sourceAccess.Directory,$true) }
+            catch { Publish-Bw $Events 'log' 'Could not remove the private source-access files.' }
+        }
         $status = if ($stats.Cancelled -or $Cancel.IsCancellationRequested) { 'Cancelled' }
         elseif ($outputs.Count -and ($stats.Errors -or $stats.ExitFailures -or $stats.Missing)) { 'Partial' }
         elseif ($outputs.Count) { 'Complete' }

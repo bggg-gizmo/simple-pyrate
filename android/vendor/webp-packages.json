@@ -1,0 +1,16 @@
+[
+  {
+    "abi": "aarch64",
+    "version": "1.6.0.0.0.1+really1.6.0",
+    "url": "https://packages.termux.dev/apt/termux-main/pool/main/libw/libwebp/libwebp_1.6.0.0.0.1+really1.6.0_aarch64.deb",
+    "size": 329548,
+    "sha256": "8ba7fcfadd1a9957a7632c6407d6ef3e41d34dbd96a41769b245592ed4559045"
+  },
+  {
+    "abi": "x86_64",
+    "version": "1.6.0.0.0.1+really1.6.0",
+    "url": "https://packages.termux.dev/apt/termux-main/pool/main/libw/libwebp/libwebp_1.6.0.0.0.1+really1.6.0_x86_64.deb",
+    "size": 391916,
+    "sha256": "3274f3b6b3b765ed5cfb3d33cf309a2222de7766ad53f0eaefcbe89563f2f7a3"
+  }
+]

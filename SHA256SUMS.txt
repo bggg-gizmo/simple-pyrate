@@ -1,1 +1,5 @@
+6ffb44959547a78184f6b7c5ae270f4024d0a769fbaf60ae88f3f9881fed08dd  Simple-Pyrate-2.6.3-Windows.zip
+e612fdf5120188a476ed8cf6d519900f6d89b23c7e07d88c0a061352bd47e916  Simple-Pyrate-2.6.3-Windows-Source.zip
+a9b5ef4ff2b86ab8ef455c192db7c9e70c74a13c8d0b3779300f46c7416edba0  Simple-Pyrate-2.6.3-Android.apk
+6b09ea09ca5388f6cd309ae901fa496b13425901e4f86ad545a4a9e139f68f82  Simple-Pyrate-2.6.3-Android-Source.zip
 ecfa2b4bb6a30fa7a4b67736dc878bc3d0a7358ff3d6b804ddefe54e6e48f77e  old_builds/v2.5.2/Simple-Pyrate-v2.5.2-Windows.zip

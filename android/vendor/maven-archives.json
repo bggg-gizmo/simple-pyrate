@@ -1,0 +1,16 @@
+[
+  {
+    "module": "library",
+    "version": "0.18.1",
+    "file": "library.aar",
+    "sha256": "579b5fb480892b1abc2b218c2089699d52759cc8d7ba256bf876453f0365faef",
+    "url": "https://repo.maven.apache.org/maven2/io/github/junkfood02/youtubedl-android/library/0.18.1/library-0.18.1.aar"
+  },
+  {
+    "module": "ffmpeg",
+    "version": "0.18.1",
+    "file": "ffmpeg.aar",
+    "sha256": "0a87ffa6cf912b0fe76c1a99b9107f543ee2f247935fae2c71f0822eb7bc5f49",
+    "url": "https://repo.maven.apache.org/maven2/io/github/junkfood02/youtubedl-android/ffmpeg/0.18.1/ffmpeg-0.18.1.aar"
+  }
+]

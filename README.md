@@ -1,10 +1,10 @@
-# Simple Pyrate v2.5.7
+# Simple Pyrate v2.6.3
 
 ![Simple Pyrate voyage artwork](docs/media/pyrate-banner-v2.5.2.jpg)
 
-![Edition v2.5.7](docs/media/edition-v2.5.7.svg) ![Windows PowerShell and WPF](docs/media/runtime.svg) ![MP4, MP3, TXT and SRT](docs/media/formats.svg)
+![Edition v2.6.3](docs/media/edition-v2.6.3.svg) ![Windows PowerShell and WPF](docs/media/runtime.svg) ![MP4, MP3, TXT and SRT](docs/media/formats.svg)
 
-**A Windows downloader for video, audio, and transcripts.**
+**A Windows and Android downloader for video, audio, and transcripts.**
 
 [Changelog](CHANGELOG.md) · [User guide](docs/USER-GUIDE.md) · [Troubleshooting](docs/TROUBLESHOOTING.md) · [Windows test checklist](docs/WINDOWS-TEST.md) · [v2.5.2 audit](docs/V2.5.2-AUDIT.md)
 
@@ -19,15 +19,26 @@ See Simple Pyrate queue an MP4 and transcript, sail from port to port, and retur
 
 [Open the walkthrough GIF](assets/Simple-Pyrate-v2.5.7-Walkthrough.gif)
 
-## Download v2.5.7 for Windows
+## Download
 
-**v2.5.7 is accepted by the maintainer.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
+Open [GitHub Releases](https://github.com/bggg-gizmo/simple-pyrate/releases) for the v2.6.3 Windows ZIP, signed Android APK, source archives, and release checksum file. The [repository checksum list](SHA256SUMS.txt) records the SHA-256 for each v2.6.3 artifact and the original v2.5.2 Windows ZIP.
 
-[Download the current Windows-ready source ZIP](https://github.com/bggg-gizmo/simple-pyrate/archive/refs/heads/main.zip) · [Windows test checklist](docs/WINDOWS-TEST.md)
+| Platform | Getting started |
+| --- | --- |
+| Windows 10 and 11 (x64 or ARM64) | Extract the Windows release ZIP and run `Start-Simple-Pyrate.cmd`. |
+| Android 10 or newer (ARM64 or x86-64) | Download and tap the standalone APK. See the [Android installation guide](android/docs/ANDROID-INSTALL.md) and [Android source](android/README.md). |
+
+v2.6.3 is a release candidate. The Windows engine was tested with local fixtures under PowerShell 7 on Linux. The signed APK passed package checks, but this exact build has not been tested on an Android device. Its signing certificate differs from v2.6.2.
+
+## This Windows build
+
+**v2.6.3 keeps the Windows artwork, voyage, sound mix, and settings from the accepted v2.5.7 build.** Port-to-port sailing holds the ship’s heading and scrolls the coast from right to left. Effects, ship bells and sea ambience share one Windows output stream. Original artwork, recordings, and saved settings are retained.
+
+Follow the [Windows test checklist](docs/WINDOWS-TEST.md) for native Windows validation.
 
 **Sound defaults.** Port effects and ship bells are on for new profiles. If you upgraded from a build that saved them off, open **Settings → Port sound effects** and enable them once. Sea ambience has its own switch, so hearing the sea doesn’t mean port effects are on.
 
-The current source ZIP includes the versioned launcher, corrected first-run setup, ship bells, and all runtime assets. No separate compile or build step is needed. Extract it to a fresh folder instead of copying over an earlier build.
+The v2.6.3 ZIP includes the versioned launcher, first-run setup, ship bells, and bundled x64 and ARM64 dependencies. No separate compile or build step is needed. Extract it to a fresh folder instead of copying over an earlier build.
 
 [Original v2.5.2 Windows package](https://github.com/bggg-gizmo/simple-pyrate/blob/main/old_builds/v2.5.2/Simple-Pyrate-v2.5.2-Windows.zip) · [Original package SHA-256](SHA256SUMS.txt)
 
@@ -38,7 +49,7 @@ The original packaged ZIP is unchanged and does not contain the setup and bell u
 1. Extract the entire current ZIP to a folder you control. Open the extracted folder that contains `Start-Simple-Pyrate.cmd` and keep its scripts and assets together. Do not open the older Windows ZIP inside it.
 2. Double-click **Start-Simple-Pyrate.cmd**. It opens the desktop window using Windows PowerShell 5.1 in STA mode. Windows needs .NET Framework 4.8 (included with Windows 11 and Windows 10 22H2). No Python, virtual environment, Node.js, browser or .NET SDK is needed to launch it.
 3. The wizard opens with **Welcome to Simple Pyrate** and **Let’s set up your ship**. It guides you through the save folder, portable or per-user app install, optional Desktop shortcut, and dependency check. If anything is missing, click **Install missing tools** and approve the Windows prompt. Click **Finish** when the inspection is ready. Existing save preferences carry over.
-4. If you chose a per-user install, launch **Simple Pyrate v2.5.7** from the Start Menu next time. For portable mode, keep the extracted folder in place.
+4. If you chose a per-user install, launch **Simple Pyrate v2.6.3** from the Start Menu next time. For portable mode, keep the extracted folder in place.
 5. Paste one complete link per line. Choose **Single item per link** or **Playlist / full channel**, pick the formats, and click **Queue haul** or press **Ctrl+Enter**.
 
 The app ships as full source with a CMD launcher, not as a compiled EXE. Run `Start-Simple-Pyrate.cmd -Setup` or choose **Settings → First-run setup** to reopen the wizard. It targets 64-bit Windows 10 and 11 (x64 and ARM64). The launcher uses a process-only PowerShell execution-policy override. It does not change Windows’ machine or user execution policy or bypass a system administrator’s Group Policy.
@@ -82,11 +93,13 @@ The raid uses the highest observed transfer percentage for each item. Split vide
 
 ### Captain’s settings
 
-Choose **Moonlit Watch**, **Corsair Run**, or **All chart-room tracks** to loop four original pirate-themed songs. The ZIP includes the editable MIDI scores and the matching offline MP3 renders, so playback does not depend on a MIDI synthesizer. **Next track**, music volume, and port effects volume are independent. Music and port sound effects are off by default, and the existing **Sea sound** switch still controls ocean ambience separately.
+Choose **Moonlit Watch**, **Corsair Run**, or **All chart-room tracks** to loop four original pirate-themed songs. The ZIP includes the editable MIDI scores and the matching offline MP3 renders, so playback does not depend on a MIDI synthesizer. **Next track**, music volume, and port effects volume are independent. Music is off and port sound effects are on for new profiles, and the existing **Sea sound** switch still controls ocean ambience separately.
 
 Enable **Settings → Port sound effects** to hear the ship bell. It strikes three times when a haul starts, twice for each port in a batch, and five times when the queue finishes. A cancelled queue does not play the finish bell. Bell cues play in order without delaying transfers or depending on the Motion setting. Music and sea sound are still independent.
 
-The settings also offer **Open Monero donation link** and **Copy XMR address**. Opening the link delegates to your registered Monero wallet. Simple Pyrate never starts or submits a payment.
+For authorized account access, open **Captain’s settings → Source access**, select the browser where you are signed in, and click **Use browser sign-in**. This applies to new hauls during the current app session. Browser availability, cookie stores, and supported sites vary. If the browser does not allow yt-dlp access, choose a supported browser where you are signed in, such as Firefox, or import your own cookies.txt. Browser sign-in does not generate a YouTube PO token. Manual token input remains available.
+
+Use **Support the crew · XMR donation** to jump straight to the donation controls. The settings also offer **Open Monero donation link** and **Copy XMR address**. Opening the link delegates to your registered Monero wallet. Simple Pyrate never starts or submits a payment.
 
 ### What happens after an MP4 download
 
@@ -96,21 +109,23 @@ A source already downloaded as MP4 is kept as-is. For other containers, Simple P
 
 ## Captions and sites
 
-Simple Pyrate uses yt-dlp’s extractors for YouTube, Rumble, TikTok, Instagram, X and other supported sites. Support depends on the exact URL and what the site serves. This release does not import browser sessions, ask for credentials, or attempt to bypass access restrictions or DRM. Private or sign-in-only posts may fail, and some public profiles require authentication or do not expose an upload list.
+Simple Pyrate uses yt-dlp’s extractors for YouTube, Rumble, TikTok, Instagram, X and other supported sites. Support depends on the exact URL and what the site serves. Browser cookies are used only if you opt into a supported browser session. The app does not bypass access restrictions or DRM. Some sources require an authorized account, and some profiles do not expose an upload list.
+
+For authenticated sources, open **Settings → Source access**. You can import a Netscape-format cookie export from your own authorized session. For YouTube, you can also enter a yt-dlp PO token in the documented client.context+token format. The PO token is not a substitute for sign-in or source-side age verification. Credentials apply to new hauls in the current session only. They are not saved in app preferences or passed as raw command-line values.
 
 The language field accepts codes such as `en`, `de`, `pt-BR`, or comma-separated combinations. A base language can match regional tracks. Use `all` alone for every exposed caption language except live chat. Manually supplied subtitles take precedence over automatic captions for the same language. Automatic captions are optional and only work where the source exposes them. Simple Pyrate does not generate new captions from speech. When a source publishes no matching convertible track, the app reports that in the queue and log.
 
 ## What Shipyard changes
 
-- Checks for `yt-dlp.exe`, `ffmpeg.exe`, `ffprobe.exe` and `deno.exe` on the **Windows system PATH**, not the current user’s PATH or a virtual environment. FFmpeg and FFprobe must be in the same PATH directory.
+- Checks the **Windows system PATH** first, then uses the appropriate bundled x64 or ARM64 copy if a tool is missing. It does not search user PATH or virtual environments. FFmpeg and FFprobe must be in the same PATH directory.
 - Installs missing tools under `%ProgramFiles%\BGGG\Blackwake\bin`, verifies the downloaded release asset against its published SHA-256 and byte count, then adds the directory to the machine PATH in the Windows registry. App sessions read the updated machine PATH directly. An already-open terminal may need to be reopened.
-- Reuses existing tools on the machine PATH. **Refresh managed tools** updates managed packages and leaves unrelated copies untouched. Simple Pyrate runs its job worker without requesting elevation. Run the app normally and let Windows elevate only Shipyard.
+- Reuses existing tools on the machine PATH. **Refresh managed tools** installs or updates verified copies in its managed machine-wide directory and leaves unrelated copies untouched. The original files inside this extracted ZIP remain intact. Simple Pyrate runs its job worker without requesting elevation. Run the app normally and let Windows elevate only Shipyard.
 - Upstream builds come from [yt-dlp](https://github.com/yt-dlp/yt-dlp/releases), [BtbN FFmpeg Builds](https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases) and [Deno](https://github.com/denoland/deno/releases). Existing Deno installations should be at least 2.3. Existing yt-dlp executables should be current.
-- For a portable copy, delete its extracted folder. For a per-user install of the current update, delete `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.5.7` and its shortcuts. The upgrade leaves the previous `App-2.5.2`, `App-2.5.2-setup2`, `App-2.5.3`, `App-2.5.4`, `App-2.5.5`, and `App-2.5.6` folders alone. The existing settings path, `%LOCALAPPDATA%\BGGG\Blackwake`, is preserved so an update picks up your preferred save folder and other options. The managed Program Files directory is also reused. To remove its managed tools as well, remove only the existing Blackwake bin entry from **System Properties → Advanced → Environment Variables → System variables → Path** and delete `%ProgramFiles%\BGGG\Blackwake` as an administrator. This does not touch your downloads or tools installed by other apps.
+- For a portable copy, delete its extracted folder. For a per-user install of the current update, delete `%LOCALAPPDATA%\BGGG\Simple Pyrate\App-2.6.3` and its shortcuts. The upgrade leaves the previous `App-2.5.2`, `App-2.5.2-setup2`, `App-2.5.3`, `App-2.5.4`, `App-2.5.5`, and `App-2.5.6` folders alone. The existing settings path, `%LOCALAPPDATA%\BGGG\Blackwake`, is preserved so an update picks up your preferred save folder and other options. The managed Program Files directory is also reused. To remove its managed tools as well, remove only the existing Blackwake bin entry from **System Properties → Advanced → Environment Variables → System variables → Path** and delete `%ProgramFiles%\BGGG\Blackwake` as an administrator. This does not touch your downloads or tools installed by other apps.
 
 ## Verification
 
-v2.5.7 retains the v2.5.1 System.Xaml startup fix. `-SmokeTest` is synchronous and returns a failure code. `-Diagnose` runs the app in the console. Startup errors point to `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log` when available.
+v2.6.3 retains the v2.5.1 System.Xaml startup fix. `-SmokeTest` is synchronous and returns a failure code. `-Diagnose` runs the app in the console. Startup errors point to `%LOCALAPPDATA%\BGGG\Blackwake\startup-error.log` when available.
 
 On Windows, check the native interface and progress control from Command Prompt:
 
@@ -136,8 +151,9 @@ The engine, voyage, and audio suites remain in place, and `Upgrade.Tests.ps1` ad
 
 ## Previous builds
 
-The repository root holds v2.5.7. The archived Windows source, assets, and tests are available separately.
+The Windows ZIP is runnable and includes its PowerShell, C#, XAML, assets, and bundled x64 and ARM64 tools. The separate source ZIP contains the same application source, assets, tests, dependency licenses and hashes without the prebuilt executables and DLLs. Copy the two architecture runtime folders from the matching Windows release ZIP to use the bundled versions from a source checkout. Earlier builds remain under [old_builds](old_builds/README.md). To restore the verified bundled components into a checkout, see [runtime hydration](docs/RUNTIME-HYDRATION.md).
 
+- [v2.5.7](old_builds/v2.5.7/) preserves the accepted Windows build and walkthrough.
 - [v2.5.6](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.6/) preserves the previous renderer and audio code.
 - [v2.5.5](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.5/) is the previous animation and audio update.
 - [v2.5.4](https://github.com/bggg-gizmo/simple-pyrate/tree/main/old_builds/v2.5.4/) includes the restored Shipyard artwork.
@@ -176,3 +192,5 @@ The repository root holds v2.5.7. The archived Windows source, assets, and tests
 | `tests/local_fixture.py` | Local media and caption fixtures for testing |
 
 [bggg] The Background Gremlin Group • Est. 2020
+
+Bundled component notices and version records are in [runtime](runtime/README.md). The application and original assets retain the [BGGG MIT license](LICENSE).

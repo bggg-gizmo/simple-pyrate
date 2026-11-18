@@ -1,0 +1,15 @@
+<resources>
+    <style name="PyrateTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:statusBarColor">#0A171D</item>
+        <item name="android:navigationBarColor">#0A171D</item>
+        <item name="android:windowBackground">#08141B</item>
+        <item name="android:colorAccent">#E6B876</item>
+        <item name="android:textColorPrimary">#F2E9D5</item>
+        <item name="android:textColorSecondary">#ABD1C3</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+    </style>
+</resources>

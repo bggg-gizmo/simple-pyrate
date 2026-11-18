@@ -1,0 +1,51 @@
+[
+  {
+    "version": "2026.10.26",
+    "name": "yt-dlp",
+    "size": 3073072,
+    "digest": "sha256:e51e69e89489f199530f13d32a4342da3ddb2cf34842f364603a066db05afbf3",
+    "browser_download_url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp"
+  },
+  {
+    "version": "2026.10.26",
+    "name": "yt-dlp.exe",
+    "size": 23575744,
+    "digest": "sha256:f5389d3698ecde4ef06f4e6b1ce0294fe9ac1396228c8990b8d3416d6d177a7d",
+    "browser_download_url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp.exe"
+  },
+  {
+    "version": "2026.10.26",
+    "name": "yt-dlp_arm64.exe",
+    "size": 22809590,
+    "digest": "sha256:0066dbac3c124028e2dcae2a197fccee33cd91f456313d24f7af89fd54590e98",
+    "browser_download_url": "https://github.com/yt-dlp/yt-dlp/releases/download/2026.10.26/yt-dlp_arm64.exe"
+  },
+  {
+    "version": "latest",
+    "name": "ffmpeg-n8.1-latest-win64-gpl-shared-8.1.zip",
+    "size": 89626998,
+    "digest": "sha256:5d98d21b1538e1723654accda2889a7de5362543c6d91cd033f0534064cefd87",
+    "browser_download_url": "https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-win64-gpl-shared-8.1.zip"
+  },
+  {
+    "version": "latest",
+    "name": "ffmpeg-n8.1-latest-winarm64-gpl-shared-8.1.zip",
+    "size": 62577461,
+    "digest": "sha256:3e330651c80462b23f511e716cf132ee8ff291f4223dd2fa35a22d9f113a7836",
+    "browser_download_url": "https://github.com/FFmpeg-Builds/FFmpeg-Builds/releases/download/latest/ffmpeg-n8.1-latest-winarm64-gpl-shared-8.1.zip"
+  },
+  {
+    "version": "v2.9.8",
+    "name": "deno-aarch64-pc-windows-msvc.zip",
+    "size": 41163152,
+    "digest": "sha256:b413b92b735b50c198e8fe3b85af1aa50e29d5f72e229aab701d132286e14cef",
+    "browser_download_url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-aarch64-pc-windows-msvc.zip"
+  },
+  {
+    "version": "v2.9.8",
+    "name": "deno-x86_64-pc-windows-msvc.zip",
+    "size": 42917472,
+    "digest": "sha256:cba84b26e0df5ae7f74fc66b86a95b866872a86292ebd84fa1e959927edd93bf",
+    "browser_download_url": "https://github.com/denoland/deno/releases/download/v2.9.8/deno-x86_64-pc-windows-msvc.zip"
+  }
+]

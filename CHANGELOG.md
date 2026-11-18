@@ -1,5 +1,40 @@
 # Changelog
 
+## v2.6.3
+
+- Add session-only use of a selected signed-in Windows browser through yt-dlp. Preserve manual cookies.txt and PO token options.
+- Show live resolve steps in the active haul and log time to the first source metadata.
+- Put a shortcut to the existing Monero donation controls near the top of Settings.
+- Preserve the launcher, installer, architecture-specific runtimes, visuals, audio, and queue.
+
+### Android
+
+- Put the existing XMR donation address and wallet actions one tap from the top of Settings.
+- Add opt-in Android Keystore protection for remembered source access and one-tap reuse from the deck. Keep the original session-only option and manual inputs.
+- Prepare the bundled runtime off the UI thread when the deck opens. Allow yt-dlp to reuse its app-private extractor cache and show live resolve steps.
+
+## v2.6.2
+
+- Keep Download, output formats, PO token access, and progress on the first screen. Move advanced download options and queue management into their own panels without removing their controls.
+- Give the original animated ship and port their own unobstructed viewport in portrait and landscape. Put the voyage caption in a separate band and preserve the original art, movement, sound effects, and audio controls.
+- Pass the PO token and its matching player client through private job configuration. Keep credentials session-only.
+- Reuse one Python process and successful source metadata for multi-format single-link hauls. Record source, transfer-start, and finalizing/saving timings in the ship’s log.
+- Add a host regression test for extraction reuse and token parsing and an Android layout smoke check.
+
+## v2.6.1
+
+- Use the supplied gold pirate ship as the app icon, with adaptive and legacy Android resources and a dark background.
+- Build directly with javac and D8 using the manifest minimum API. Package every DEX and the two native runtime sets, align before signing, and verify the final APK.
+- Keep the original Android runtime, voyage scenes, sound, and download features unchanged.
+
+## v2.6.0
+
+- Add a standalone portrait-first Android APK with rotating layouts, a background voyage, full haul controls, and the original Windows ship, ports, music, and effects.
+- Include the Python, QuickJS, FFmpeg, FFprobe and yt-dlp toolchain on Android. Shipyard can update yt-dlp against the upstream release SHA-256. Native runtime updates use a signed APK.
+- Windows now falls back to bundled x64 or ARM64 yt-dlp, Deno, FFmpeg and FFprobe. The optional machine-PATH updater still verifies packages before installing or refreshing them.
+- Add session-only Source access on both platforms for user-provided cookie exports and optional YouTube PO tokens.
+- Preserve the accepted Windows rendering, audio, settings, download completion, and installer workflow.
+
 ## v2.5.7
 
 - Accepted by the maintainer after testing. The reported silence was traced to the saved Port sound effects setting being off, not to missing recordings. New profiles default to on. Upgrades retain the saved choice.

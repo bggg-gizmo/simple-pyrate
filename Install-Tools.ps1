@@ -129,7 +129,7 @@ try {
     New-BwProtectedDirectory $base
     New-BwProtectedDirectory $bin
     $lock = [IO.File]::Open((Join-Path $base 'setup.lock'),[IO.FileMode]::OpenOrCreate,[IO.FileAccess]::ReadWrite,[IO.FileShare]::None)
-    $tools = Get-BwToolPaths
+    $tools = Get-BwToolPaths -MachineOnly
     $ytAsset = if ($arm) { 'yt-dlp_arm64.exe' } else { 'yt-dlp.exe' }
     $ffAsset = if ($arm) { 'ffmpeg-master-latest-winarm64-gpl.zip' } else { 'ffmpeg-master-latest-win64-gpl.zip' }
     $denoAsset = if ($arm) { 'deno-aarch64-pc-windows-msvc.zip' } else { 'deno-x86_64-pc-windows-msvc.zip' }
@@ -143,8 +143,7 @@ try {
     $stage = Join-Path $base ('setup-' + [guid]::NewGuid().ToString('N'))
     New-BwProtectedDirectory $stage
     foreach ($package in $packages) {
-        $managed = [IO.File]::Exists((Join-Path $bin $package.Names[0]))
-        if ($Refresh -and $managed) { Install-BwPackage $package $stage $bin; continue }
+        if ($Refresh) { Install-BwPackage $package $stage $bin; continue }
         if ($tools[$package.Key]) {
             Write-Host "$($package.Name) already available: $($tools[$package.Key])"
         } elseif ((@($package.Names | Where-Object { ![IO.File]::Exists((Join-Path $bin $_)) })).Count) {
@@ -154,7 +153,7 @@ try {
     if ((@($packages | Where-Object { [IO.File]::Exists((Join-Path $bin $_.Names[0])) })).Count) {
         Set-BwMachinePath $bin
     }
-    $checked = Get-BwToolPaths
+    $checked = Get-BwToolPaths -MachineOnly
     if (@($checked.Values | Where-Object { !$_ }).Count) { throw 'Setup finished but one or more tools were still missing from the system PATH.' }
     Write-Host 'Shipyard ready. Returning to Simple Pyrate.' -ForegroundColor Green
 } catch {

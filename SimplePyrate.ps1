@@ -237,7 +237,7 @@ function Show-BwShipyard {
         if ($p) { "$_  /  $p" } else { "$_  /  missing from system PATH" }
     })
     $content.Text = ($status -join [Environment]::NewLine) + [Environment]::NewLine + [Environment]::NewLine +
-        'Missing tools are installed under Program Files and registered on the machine-wide PATH after Windows administrator approval. Refresh only replaces tools installed by Simple Pyrate.'
+        'This package includes tools for immediate use. Refresh managed tools installs or updates verified copies on the Windows system PATH after administrator approval. Other apps'' tool files are not replaced.'
     $content.LineHeight = 21
     $null=$d.Body.Children.Add($content)
     $close = New-BwDialogButton $d.Buttons 'Close'; $close.IsCancel=$true
@@ -412,7 +412,8 @@ function Submit-BwQueue {
         foreach ($link in $links) {
             $job=[pscustomobject]@{ Url=$link; Modes=$modes; Scope=$scope; Destination=$destination; Languages=$language
                 Height=[int]$script:Ui.HeightChoice.SelectedItem.Tag; AudioQuality=[string]$script:Ui.QualityChoice.SelectedItem.Tag
-                CaptionFormat=[string]$script:Ui.CaptionChoice.SelectedItem.Tag; AutoCaptions=[bool]$script:Ui.AutoCaptions.IsChecked }
+                CaptionFormat=[string]$script:Ui.CaptionChoice.SelectedItem.Tag; AutoCaptions=[bool]$script:Ui.AutoCaptions.IsChecked
+                Access=$script:PyrateSourceAccess }
             $tag = ($modes -replace '^Captions$','Transcript') -join ' + '
             $tag += if ($scope -eq 'collection') { '  /  Playlist or channel' } else { '  /  Single item' }
             $row=New-BwRow $job 'Queued' $tag
@@ -495,6 +496,9 @@ function Read-BwEvents {
                 $detail=if ($data -eq 'Captions') { 'Finding matching caption tracks' } else { "Preparing $data" }
                 Set-BwActive 'UNDERWAY' $script:Current.Label $detail 'Resolving media'
                 Set-BwMeter $null $true
+            }
+            'resolving' {
+                if (!$stopping -and $script:Ui.ActiveStatus.Text -eq 'UNDERWAY') { $script:Ui.ActiveDetail.Text=[string]$data }
             }
             'port' {
                 if ($stopping) { break }
@@ -605,6 +609,7 @@ function Read-BwEvents {
     Complete-BwVoyage ([string]$done.Status) (Test-BwVoyageContinuing)
     $detail = if ($done.Files -eq 1) { '1 file available' } else { "$($done.Files) files available" }
     if ($done.Missing) { $detail+="  /  $($done.Missing) without matching captions" }
+    if ($script:Current.Job.PSObject.Properties['Access']) { $script:Current.Job.Access=$null }
     Update-BwRow $script:Current $done.Status $detail
     Set-BwActive ($done.Status.ToUpperInvariant()) $script:Ui.ActiveTitle.Text $detail $(if ($done.Status -eq 'Complete') { 'Haul secured' } else { 'Details in the ship''s log' })
     Set-BwMeter $(if ($done.Status -eq 'Complete') { 100 } else { 0 }) $false
@@ -777,6 +782,7 @@ $script:Ui.Remove.add_Click({ param($sender,$e) $row=$script:Ui.Jobs.SelectedIte
 $script:Ui.Retry.add_Click({
     $row=$script:Ui.Jobs.SelectedItem
     if ($row -and $row.Status -in @('Failed','Partial','Cancelled','No captions','No files')) {
+        if ($row.Job.PSObject.Properties['Access']) { $row.Job.Access=$script:PyrateSourceAccess }
         Update-BwRow $row 'Queued' 'Waiting to retry'; Update-BwQueue; $script:Hold=$false; Start-BwNext
     }
 })

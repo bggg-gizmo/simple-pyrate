@@ -96,3 +96,7 @@ The 65 checks cover output formats, single and multi-item downloads, item-to-por
 | `tests/local_fixture.py` | Local media and caption fixtures for testing |
 
 [bggg] The Background Gremlin Group • Est. 2020
+
+## v2.5.7
+
+[Windows source snapshot](v2.5.7/) from the last v2.5.7 commit on `main`, including the animated walkthrough. This preserves the accepted build as it existed before v2.6.3.

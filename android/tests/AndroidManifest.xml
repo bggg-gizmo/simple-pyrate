@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.bggg.simplepyrate.test">
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="35"/>
+    <application android:label="Simple Pyrate Test"/>
+    <instrumentation android:targetPackage="com.bggg.simplepyrate" android:name="com.bggg.simplepyrate.Smoke"
+        android:label="Bundled tools and export smoke test"/>
+</manifest>

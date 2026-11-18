@@ -14,6 +14,7 @@ $script:PyrateAddress='8AEyf8SfkYx6sHrLsp8aSAXrS8r9BZmnBfA6US9taa4mWpPXMNitipudP
 $script:PyrateMusicChoice=0
 $script:PyrateMusicVolume=35
 $script:PyrateEffectsOn=$true
+$script:PyrateSourceAccess=[pscustomobject]@{ Po=''; Cookies=$null; Browser='' }
 $script:PyrateEffectsVolume=50
 $script:PyrateWizardComplete=$false
 $script:PyrateWizardLayoutRevision=4
@@ -179,9 +180,84 @@ function Update-PyrateRaidSound($Frame,[bool]$Animate=$true) {
         }
     }
 }
+function Show-PyrateSourceAccess {
+    $dialog=New-BwDialog 'Source access' 620 590
+    $body=New-PyrateDialogStack $dialog
+    $null=New-PyrateDialogText $body 'Optional credentials for an account you control. Cookies authorize only what that account can access. YouTube PO tokens do not replace sign-in or age verification.' 'Small'
+    $null=New-PyrateDialogText $body 'BROWSER SIGN-IN' 'Kicker'
+    $null=New-PyrateDialogText $body 'Choose the browser where you are already signed in. Browser access is for this app session only. Firefox is an option if your browser does not let yt-dlp read its cookie store.' 'Small'
+    $browser=[Windows.Controls.ComboBox]::new()
+    [Windows.Automation.AutomationProperties]::SetName($browser,'Signed-in browser')
+    $browser.Margin=[Windows.Thickness]::new(0,0,0,7)
+    foreach ($name in @('Firefox','Edge','Chrome','Brave','Vivaldi')) { $null=$browser.Items.Add($name) }
+    $browser.SelectedIndex=0
+    if ($script:PyrateSourceAccess.Browser) {
+        foreach ($name in $browser.Items) { if ($name -ieq $script:PyrateSourceAccess.Browser) { $browser.SelectedItem=$name; break } }
+    }
+    $null=$body.Children.Add($browser)
+    $useBrowser=New-BwDialogButton $body 'Use browser sign-in' $true
+    $useBrowser.HorizontalAlignment='Left'
+    $null=New-PyrateDialogText $body 'YOUTUBE PO TOKEN' 'Kicker'
+    $token=[Windows.Controls.PasswordBox]::new()
+    $token.Password=$script:PyrateSourceAccess.Po
+    $token.MaxLength=16384
+    $token.Margin=[Windows.Thickness]::new(0,0,0,7)
+    $token.Padding=[Windows.Thickness]::new(7)
+    $token.Foreground=Get-BwBrush '#EFE9D9'; $token.Background=Get-BwBrush '#0B171D'
+    [Windows.Automation.AutomationProperties]::SetName($token,'YouTube PO token')
+    $null=$body.Children.Add($token)
+    $null=New-PyrateDialogText $body 'Use client.context+token, with commas between multiple tokens.' 'Small'
+    $null=New-PyrateDialogText $body 'COOKIES.TXT' 'Kicker'
+    $note=New-PyrateDialogText $body $(if ($script:PyrateSourceAccess.Cookies) { 'A cookie file is loaded for this session.' } elseif ($script:PyrateSourceAccess.Browser) { 'Using the selected browser for new hauls.' } else { 'No cookie file selected. Credentials are not saved in preferences.' }) 'Small'
+    $controls=[Windows.Controls.WrapPanel]::new()
+    $null=$body.Children.Add($controls)
+    $state=@{ Note=$note; Token=$token; Cookies=$script:PyrateSourceAccess.Cookies; Browser=$script:PyrateSourceAccess.Browser; Picker=$browser }
+    $useBrowser.Tag=$state
+    $useBrowser.add_Click({
+        param($sender,$e)
+        $state=$sender.Tag
+        try {
+            $script:PyrateSourceAccess=New-BwSourceAccess $state.Token.Password $null ([string]$state.Picker.SelectedItem)
+            [Windows.Window]::GetWindow($sender).DialogResult=$true
+        } catch { $state.Note.Text=$_.Exception.Message }
+    })
+    $import=New-BwDialogButton $controls 'Import cookies.txt'; $import.Tag=$state
+    $import.add_Click({
+        param($sender,$e)
+        $state=$sender.Tag
+        try {
+            $picker=[Microsoft.Win32.OpenFileDialog]::new()
+            $picker.Title='Choose a Netscape-format cookie export'
+            $picker.Filter='Cookie text files (*.txt)|*.txt|All files (*.*)|*.*'
+            if ($picker.ShowDialog([Windows.Window]::GetWindow($sender))) {
+                $state.Cookies=Read-BwCookieExport $picker.FileName; $state.Browser=''
+                $state.Note.Text='A cookie file is loaded. Choose Save for this session.'
+            }
+        } catch { $state.Note.Text=$_.Exception.Message }
+    })
+    $clear=New-BwDialogButton $controls 'Clear credentials'; $clear.Tag=$state
+    $clear.add_Click({
+        param($sender,$e)
+        $sender.Tag.Token.Clear(); $sender.Tag.Cookies=$null; $sender.Tag.Browser=''
+        $sender.Tag.Note.Text='Cleared. Save to use these settings for new hauls.'
+    })
+    $close=New-BwDialogButton $dialog.Buttons 'Cancel'; $close.IsCancel=$true
+    $save=New-BwDialogButton $dialog.Buttons 'Save for this session' $true; $save.Tag=$state
+    $save.add_Click({
+        param($sender,$e)
+        $state=$sender.Tag
+        try {
+            $script:PyrateSourceAccess=New-BwSourceAccess $state.Token.Password $state.Cookies $state.Browser
+            [Windows.Window]::GetWindow($sender).DialogResult=$true
+        } catch { $state.Note.Text=$_.Exception.Message }
+    })
+    $null=$dialog.Window.ShowDialog()
+}
 function New-PyrateSettings {
     $d=New-BwDialog 'Captain''s settings' 600 645
     $body=New-PyrateDialogStack $d
+    $jump=New-BwDialogButton $body 'Support the crew · XMR donation'
+    $jump.HorizontalAlignment='Left'
     $null=New-PyrateDialogText $body '01  /  SOUND DECK' 'Kicker'
     $null=New-PyrateDialogText $body 'Original pirate MIDI scores with offline playback. Sea sound stays independent.' 'Small'
     $choice=[Windows.Controls.ComboBox]::new()
@@ -234,12 +310,18 @@ function New-PyrateSettings {
     })
     $next.add_Click({ $script:PyrateTrackIndex++; Set-PyrateMusic $false })
     $test.add_Click({ Play-PyrateEffect 0 })
-    $null=New-PyrateDialogText $body '02  /  SUPPORT THE CREW' 'Kicker'
+    $null=New-PyrateDialogText $body '02  /  SOURCE ACCESS' 'Kicker'
+    $source=New-BwDialogButton $body 'Source access'
+    $source.HorizontalAlignment='Left'
+    $source.add_Click({ Show-PyrateSourceAccess })
+    $null=New-PyrateDialogText $body '03  /  SUPPORT THE CREW' 'Kicker'
     $null=New-PyrateDialogText $body 'Donate Monero (XMR) to The Background Gremlin Group.' 'Small'
     $address=[Windows.Controls.TextBox]::new()
     $address.Text=$script:PyrateAddress; $address.IsReadOnly=$true; $address.TextWrapping='Wrap'
     [Windows.Automation.AutomationProperties]::SetName($address,'Monero donation address')
     $address.Margin=[Windows.Thickness]::new(0,0,0,8); $null=$body.Children.Add($address)
+    $jump.Tag=$address
+    $jump.add_Click({ param($sender,$e) $sender.Tag.BringIntoView(); $null=$sender.Tag.Focus() })
     $support=[Windows.Controls.WrapPanel]::new(); $null=$body.Children.Add($support)
     $wallet=New-BwDialogButton $support 'Open Monero donation link'
     $copy=New-BwDialogButton $support 'Copy XMR address'
@@ -301,17 +383,24 @@ function Install-PyrateUserCopy {
         'assets\Deck.xaml','assets\Night-Sea.wav','assets\build-audio.py','assets\build-voyage.py','assets\make-sea.py',
         'assets\voyage\sea-and-sky.png','assets\voyage\fog.png','assets\voyage\lagoon.png','assets\voyage\pyrate-ship.png',
         'assets\voyage\port-0.png','assets\voyage\port-1.png','assets\voyage\port-2.png','assets\voyage\port-3.png',
-        'README.md','CHANGELOG.md','docs\USER-GUIDE.md','docs\TROUBLESHOOTING.md','docs\DEVELOPMENT.md',
+        'README.md','CHANGELOG.md','LICENSE','AGENTS.md','docs\USER-GUIDE.md','docs\TROUBLESHOOTING.md','docs\DEVELOPMENT.md',
         'docs\WINDOWS-TEST.md','docs\V2.5.2-AUDIT.md','docs\media\pyrate-banner-v2.5.2.jpg','docs\media\edition-v2.5.2.svg',
         'docs\media\edition-v2.5.3.svg','docs\media\edition-v2.5.4.svg','docs\media\edition-v2.5.5.svg','docs\media\edition-v2.5.6.svg','docs\media\edition-v2.5.7.svg',
-        'docs\media\runtime.svg','docs\media\formats.svg','docs\media\at-anchor.jpg','docs\media\port-battle.jpg',
-        'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\ShipAudio.Tests.ps1','tests\local_fixture.py'
+        'docs\media\edition-v2.6.0.svg','docs\media\edition-v2.6.3.svg','docs\media\runtime.svg','docs\media\formats.svg','docs\media\at-anchor.jpg','docs\media\port-battle.jpg',
+        'tests\Engine.Tests.ps1','tests\Voyage.Tests.ps1','tests\Upgrade.Tests.ps1','tests\ShipAudio.Tests.ps1','tests\SourceAccess.Tests.ps1','tests\local_fixture.py'
     )
     foreach ($track in $script:PyrateMusicNames.Keys) {
         $files+="assets\audio\$track.mid"; $files+="assets\audio\$track.mp3"
     }
     foreach ($cue in $script:PyrateEffects) { $files+="assets\audio\$cue.wav" }
     foreach ($cue in $script:PyrateBellAssets.Values) { $files+="assets\audio\$cue.wav" }
+    $runtime=Join-Path $script:AppRoot 'runtime'
+    if ([IO.Directory]::Exists($runtime)) {
+        foreach ($entry in @(Get-ChildItem -LiteralPath $runtime -File -Recurse)) {
+            if (($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0) { throw 'The runtime package contains a linked file.' }
+            $files+=$entry.FullName.Substring($script:AppRoot.TrimEnd('\').Length+1)
+        }
+    }
     foreach ($name in $files) {
         if (![IO.File]::Exists((Join-Path $script:AppRoot $name))) { throw "The extracted app is missing $name. Extract the full ZIP before installing." }
     }
@@ -420,7 +509,7 @@ function Set-PyrateWizardPage($State) {
             $art.Margin=[Windows.Thickness]::new(0,6,0,12)
             $null=$State.Body.Children.Add($art)
 
-            $null=Add-PyrateWizardText $State.Body 'Choose a save folder, then check yt-dlp, FFmpeg, FFprobe, and Deno. Windows only asks for administrator approval if system tools need to be installed.'
+            $null=Add-PyrateWizardText $State.Body 'Choose a save folder, then check the included yt-dlp, FFmpeg, FFprobe, and Deno. Windows only asks for administrator approval if you install or refresh system tools.'
             $State.Next.Content='Next'
         }
         1 {
@@ -446,7 +535,7 @@ function Set-PyrateWizardPage($State) {
         }
         2 {
             $null=Add-PyrateWizardText $State.Body '03  /  SHIPYARD INSPECTION' 'Step'
-            $null=Add-PyrateWizardText $State.Body 'Check the machine-wide tools' 'Title'
+            $null=Add-PyrateWizardText $State.Body 'Check the download tools' 'Title'
             $State.Ready=$false
             if (!$script:Setup) { $State.Ready=Update-BwTools }
             foreach ($key in @('yt-dlp','ffmpeg','ffprobe','deno')) {
@@ -465,7 +554,7 @@ function Set-PyrateWizardPage($State) {
                 [Windows.Controls.Grid]::SetColumn($value,1)
                 $null=$State.Body.Children.Add($line)
             }
-            $null=Add-PyrateWizardText $State.Body 'Existing system tools are kept. Only missing tools are downloaded, verified, and registered on the Windows system PATH.'
+            $null=Add-PyrateWizardText $State.Body 'Bundled tools run without an install. To update them, open Shipyard from the main screen and refresh verified tools on the system PATH.'
             $State.Note=Add-PyrateWizardText $State.Body '' 'Note'
             if ($script:Setup) {
                 $State.Note.Text='Installing and checking Windows system tools. This can take a few minutes.'
